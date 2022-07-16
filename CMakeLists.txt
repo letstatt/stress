@@ -29,6 +29,13 @@ if (WIN32)
             "src/win/core/run.cpp"
             "src/win/terminal.cpp"
             "src/win/invoker.cpp")
+else()
+    list(APPEND sources
+            "src/linux/core/error_info.cpp"
+            "src/linux/core/run.cpp"
+            "src/linux/terminal.cpp"
+            "src/linux/invoker.cpp"
+            "src/linux/parsing/proc_parser.cpp")
 endif()
 
 # options
