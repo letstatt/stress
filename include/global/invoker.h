@@ -3,6 +3,7 @@
 #include "units/unit.h"
 #include "core/run.h"
 #include <variant>
+#include <functional>
 
 #ifdef INVOKER_MACROS
 #define E_RULE(key, ...) \

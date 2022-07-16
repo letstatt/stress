@@ -103,7 +103,8 @@ namespace invoker {
     exec_commands executionCommands;
     comp_commands compilationCommands;
 
-    auto compileExpr(runtime_config const &cfg, units::unit const &u, auto t) {
+    template <typename T>
+    auto compileExpr(runtime_config const &cfg, units::unit const &u, T t) {
         auto visitor = [&cfg, &u](auto &arg) {
             if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, std::string>) {
                 return arg;
@@ -133,7 +134,7 @@ namespace invoker {
                 }
             }
         };
-        if constexpr (std::is_same_v<decltype(t), std::string>) {
+        if constexpr (std::is_same_v<T, std::string>) {
             instantiate(t);
         } else {
             for (std::string &i: t) {

@@ -86,6 +86,7 @@ private:
     // os-dependent
     std::string errInfoExplanation() const;
 
+    // os-dependent
     void errInfoClear();
 };
 

@@ -1,6 +1,7 @@
 #include "stress.h"
 #include "parsing/parser.h"
 #include "logger.h"
+#include "terminal.h"
 #include "core/run.h"
 #include "units/to_test.h"
 #include "units/prime.h"
