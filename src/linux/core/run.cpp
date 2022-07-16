@@ -1,23 +1,22 @@
 #include "core/run.h"
-#include "win/core/error_info.h"
+#include "linux/core/error_info.h"
+#include <unordered_map>
+#include <csignal>
 
 namespace {
     std::string errorCodeExplanation(size_t errCode) {
-        const static std::string unknown = "unknown error ";
-        const static std::unordered_map<size_t, const std::string> m = {
-                {EXCEPTION_ACCESS_VIOLATION,      "access violation"},
-                {EXCEPTION_STACK_OVERFLOW,        "stack overflow"},
-                {EXCEPTION_ARRAY_BOUNDS_EXCEEDED, "array index out of bounds"},
-                {EXCEPTION_ILLEGAL_INSTRUCTION,   "illegal instruction"},
-                {EXCEPTION_INT_DIVIDE_BY_ZERO,    "division by zero"},
-                {EXCEPTION_FLT_DIVIDE_BY_ZERO,    "division by zero"},
-                {EXCEPTION_PRIV_INSTRUCTION,      "private instruction execution"}
+        const static std::string unknown = "killed by signal ";
+        const static std::unordered_map<unsigned long, const std::string> m = {
+                {SIGSEGV, "segmentation fault"},
+                {SIGABRT, "caught SIGABRT, mostly assertions/abort()"},
+                {SIGFPE, "division by zero"}, // todo: not fair
+                {SIGILL, "illegal instruction"}
         };
         return (m.count(errCode) ? m.find(errCode)->second : unknown + std::to_string(errCode));
     }
 }
 
-// execution_error windows implementation
+// execution_error linux implementation
 
 std::string execution_error::errInfoExplanation() const {
     std::string errorCodeExpl = errorCodeExplanation(errCode);

@@ -64,7 +64,7 @@ terminal_token::~terminal_token() {
     SetConsoleMode(hIn, oldConsoleInMode);
 }
 
-// terminal_implementation
+// terminal implementation
 
 int terminal::getChar() noexcept {
     FlushConsoleInputBuffer(hIn);
