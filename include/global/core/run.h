@@ -72,6 +72,8 @@ struct execution_error {
 
     bool hasError() const;
 
+    bool hasErrorInfo() const;
+
     std::string errorExplanation() const;
 
     void clear();

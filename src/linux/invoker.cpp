@@ -14,7 +14,16 @@
 #include <sys/resource.h>
 #include <sys/user.h>
 #include <cassert>
+#include <cstring>
+#include <unordered_set>
 #include "linux/parsing/proc_parser.h"
+
+#ifdef __x86_64__
+#define register_ip rip
+#define register_sp rsp
+#else
+#error "you should define macros for important registers"
+#endif
 
 namespace {
     constexpr size_t BATCH_SIZE = 256;
@@ -95,7 +104,7 @@ namespace {
         }
     }
 
-    bool debugger(execution_result &result, units::unit const &unit, pid_t pid) {
+    bool warmup(pid_t pid) {
         int status;
 
         // WARM-UP
@@ -130,12 +139,12 @@ namespace {
                     ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_EXITKILL | PTRACE_O_TRACEEXEC);
                     ptrace(PTRACE_CONT, pid, 0, 0);
 
-                } else if ((status >> 16) == PTRACE_EVENT_EXEC) {
-                    // caught execvp event.
+                } else if (status >> 8 == (SIGTRAP | PTRACE_EVENT_EXEC << 8)) {
+                    // we have stopped just after execvp.
                     // avoid further traceexec events.
                     ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_EXITKILL);
                     // break to continue debugging
-                    break;
+                    return true;
 
                 } else {
                     // do not allow forked process to receive other signals
@@ -153,32 +162,57 @@ namespace {
                 return false;
             }
         }
+    }
+
+    bool debugger(execution_result &result, units::unit const &unit, pid_t pid) {
+        if (!warmup(pid)) {
+            return false;
+        }
 
         // MONITORING
-        // watcher is running, do debugger work
+        // declare some stuff and do debugger work
 
-#ifndef __x86_64__
-#error "this architecture is not supported yet."
-#endif
+        // to distinguish stack overflow and general access violation
+        // we need to associate each thread with its stack area.
+        std::unordered_map<pid_t, std::optional<maps::entry>> stacks;
+        std::optional<maps> mappings_opt;
 
+        struct user_regs_struct regs;
+        memset(&regs, 0, sizeof(regs));
+
+        // read registers
+        ptrace(PTRACE_GETREGS, pid, 0, &regs);
+
+        // read sections from /proc/pid/maps
+        mappings_opt = proc_parser::get_maps(pid);
+
+        if (mappings_opt.has_value()) {
+            maps const& maps = mappings_opt.value();
+            // add main thread stack
+            stacks[pid] = maps.getSectionByAddr(regs.register_sp);
+        }
+
+        // store temporary signal info here.
+        siginfo_t siginfo;
+        memset(&siginfo, 0, sizeof(siginfo));
+
+        // associate received bad signals with some state
         std::unordered_map<int, error_info> snapshots;
-        // no guarantees for correctness if SA_NODEFER was set in the tracee
 
-        siginfo_t lastCaughtSignal;
-        struct user_regs_struct registers{}; // x86_64 only
+        // save threads' pid here.
+        std::unordered_set<pid_t> threads{pid};
 
-        std::optional<stat> stat_opt;
-        std::optional<maps> maps_opt;
+        // TRACE CLONE seems to be the only interesting option.
+        // TRACE FORKS and VFORKS are not, because after them
+        // the user must call exec not to break memory, probably.
+        ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_EXITKILL | PTRACE_O_TRACECLONE);
 
-        // todo: prepare code for multithreaded processes
-        // current implementation detects errors well
-        // only if the main thread handles signals.
-        //ptrace(PTRACE_SETOPTIONS, pid, 0, );
+        // todo: what about exec?
 
         // start
         ptrace(PTRACE_CONT, pid, 0, 0);
         bool terminatedByWatcher = false;
-        bool work = true;
+        int status;
 
         // time counting
         using namespace std::chrono;
@@ -188,18 +222,20 @@ namespace {
         // memory counting (kilobytes)
         struct rusage rusage{};
 
-        while (work) {
-            // wait4 is not standardized on Linux (!)
-            while (wait4(pid, &status, WNOHANG, &rusage) == 0) {
+        while (true) {
+            pid_t child;
+
+            // wait4 is not standardized on Linux
+            while ((child = wait4(-1, &status, WNOHANG, &rusage)) == 0) {
                 elapsed = duration_cast<milliseconds>(steady_clock::now() - start).count();
 
                 if (terminal::interrupted()
                     || (unit.timeLimit != 0 && elapsed > unit.timeLimit)
                     || (unit.memoryLimit != 0 && rusage.ru_maxrss * 1024ull > unit.memoryLimit)) { // todo: avoid multiplication
-                    // notice: the signal will be intercepted by a tracer
                     terminatedByWatcher = true;
-                    kill(pid, SIGKILL);
-                    work = false;
+                    for (auto victim: threads) {
+                        kill(victim, SIGKILL);
+                    }
                     break;
                 }
 
@@ -219,74 +255,88 @@ namespace {
                 int signal = WSTOPSIG(status);
 
                 if (signal != SIGTRAP) {
-                    /*ptrace(PTRACE_GETSIGINFO, pid, 0, &lastCaughtSignal);
-                    ptrace(PTRACE_GETREGS, pid, 0, &registers);
-                    long w = ptrace(PTRACE_PEEKTEXT, pid, registers.rip, 0);
-                    terminal::syncOutput("[!] word ", w, " ", *((unsigned long*) &w), '\n');
-                    terminal::pause();*/
-                    if (signal == SIGSEGV) {
-                        if (!stat_opt.has_value()) {
-                            // should be loaded once
-                            stat_opt = proc_parser::get_stat(pid);
-                        }
-                        if (!maps_opt.has_value()) {
-                            // should be loaded once on single-thread app
-                            // if multithreaded, should be reloaded everytime :_(
-                            maps_opt = proc_parser::get_maps(pid);
-                        }
-                        ptrace(PTRACE_GETSIGINFO, pid, 0, &lastCaughtSignal);
-                        ptrace(PTRACE_GETREGS, pid, 0, &registers);
-                        if (!snapshots.count(SIGSEGV)) {
-                            snapshots.emplace(SIGSEGV, error_info{});
-                        }
-                        error_info & info = snapshots.at(SIGSEGV);
-                        info.set(lastCaughtSignal, registers);
-                        if (maps_opt.has_value()) {
-                            info.set(std::move(maps_opt.value()));
-                            maps_opt = std::nullopt;
+                    if (signal != SIGSTOP && signal != SIGCONT) {
+                        error_info &info = snapshots[signal];
+
+                        // fill signal info
+                        ptrace(PTRACE_GETSIGINFO, child, 0, &siginfo);
+                        info.setSigInfo(siginfo);
+
+                        // on SIGSEGV additional info is available
+                        if (signal == SIGSEGV) {
+                            ptrace(PTRACE_GETREGS, child, 0, &regs);
+
+                            // we should update mappings, because stacks grow,
+                            // and old top bounds are already invalid.
+                            mappings_opt = proc_parser::get_maps(pid);
+
+                            // update thread stack area
+                            if (mappings_opt.has_value() && stacks[child].has_value()) {
+                                stacks[child] = mappings_opt.value()
+                                        .getExactSectionByEndAddr(stacks[child].value().end);
+                            }
+
+                            info.setInstructionPointer(regs.register_ip);
+                            info.setStackSection(regs.register_sp, stacks[child]);
+                            info.setMappings(std::move(mappings_opt));
                         }
                     }
-                }
 
-                // send back what it caught
-                // if signal kills process, will lastCaughtSignal
-                // and registers remain the same? todo: ?
-                ptrace(PTRACE_CONT, pid, 0, WSTOPSIG(status));
-                continue;
+                    // send back what it caught
+                    ptrace(PTRACE_CONT, child, 0, WSTOPSIG(status));
+
+                } else {
+                    if (status >> 8 == (SIGTRAP | PTRACE_EVENT_CLONE << 8)) {
+                        // new thread created.
+                        // let's get its pid and stack.
+                        pid_t new_thread;
+                        ptrace(PTRACE_GETEVENTMSG, child, 0, &new_thread);
+                        ptrace(PTRACE_GETREGS, new_thread, 0, &regs);
+                        threads.insert(new_thread);
+
+                        // update mappings
+                        // todo: could be optimized not to store all maps
+                        mappings_opt = proc_parser::get_maps(pid);
+
+                        // add thread stack
+                        if (mappings_opt.has_value()) {
+                            stacks[new_thread] = mappings_opt.value()
+                                    .getSectionByAddr(regs.register_sp);
+                        }
+
+                        // resume new thread
+                        ptrace(PTRACE_CONT, new_thread, 0, 0);
+                    }
+                    // resume thread from SIGTRAP
+                    ptrace(PTRACE_CONT, child, 0, 0);
+                }
             } else if (WIFEXITED(status)) {
                 // process exited normally, check return code
-                result.error.storeExitCode(WEXITSTATUS(status));
-                break;
+                if (!result.error.hasErrorInfo()) {
+                    result.error.storeExitCode(WEXITSTATUS(status));
+                }
+                threads.erase(child);
+                if (threads.empty()) {
+                    // wait for all the threads
+                    break;
+                }
             } else if (WIFSIGNALED(status)) {
                 // process terminated by a signal
                 int signal = WTERMSIG(status);
 
-                // if not killed manually, set error code
-                if (!terminatedByWatcher || signal != SIGKILL) {
+                // if not killed manually, set error code and additional info
+                if ((!terminatedByWatcher || signal != SIGKILL) && !result.error.hasErrorInfo()) {
                     result.error.storeErrCode(signal);
 
-                    /*error_info info{};
-                    info.set(lastCaughtSignal, registers);
-
-                    terminal::syncOutput("[!] si_code ", lastCaughtSignal.si_code, '\n');
-                    terminal::syncOutput("[!] si_errno ", lastCaughtSignal.si_errno, '\n');
-
-                    terminal::syncOutput("[!] rsp ", registers.rsp, '\n');
-                    terminal::syncOutput("[!] rip ", registers.rip, '\n');*/
-
-                    if (signal == SIGSEGV) {
-                        //terminal::syncOutput("[!] si_addr ", lastCaughtSignal.si_addr, '\n');
-                        if (snapshots.count(SIGSEGV)) {
-                            error_info & info = snapshots.at(SIGSEGV);
-                            if (stat_opt.has_value()) {
-                                info.set(std::move(stat_opt.value()));
-                            }
-                            result.error.storeErrInfo(info);
-
-                        }
+                    if (snapshots.count(signal)) {
+                        result.error.storeErrInfo(snapshots[signal]);
                     }
                 } // otherwise, process was killed manually
-                break;
+                threads.erase(child);
+                if (threads.empty()) {
+                    // wait for all the threads
+                    break;
+                }
             } else {
                 // another error
                 terminal::syncOutput(

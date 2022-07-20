@@ -33,6 +33,7 @@ else()
     list(APPEND sources
             "src/linux/core/error_info.cpp"
             "src/linux/core/run.cpp"
+            "src/linux/core/maps.cpp"
             "src/linux/terminal.cpp"
             "src/linux/invoker.cpp"
             "src/linux/parsing/proc_parser.cpp")

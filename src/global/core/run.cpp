@@ -108,6 +108,10 @@ bool execution_error::hasError() const {
     return exitCode | errCode;
 }
 
+bool execution_error::hasErrorInfo() const {
+    return info != nullptr;
+}
+
 std::string execution_error::errorExplanation() const {
     std::stringstream str;
 

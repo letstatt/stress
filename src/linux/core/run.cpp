@@ -8,9 +8,11 @@ namespace {
         const static std::string unknown = "killed by signal ";
         const static std::unordered_map<unsigned long, const std::string> m = {
                 {SIGSEGV, "segmentation fault"},
-                {SIGABRT, "caught SIGABRT, mostly assertions/abort()"},
-                {SIGFPE, "division by zero"}, // todo: not fair
-                {SIGILL, "illegal instruction"}
+                {SIGABRT, "abnormal termination (uncaught exception?)"},
+                {SIGFPE, "arithmetic exception"},
+                {SIGILL, "illegal instruction"},
+                {SIGKILL, "SIGKILL"},
+                {SIGTERM, "SIGTERM"}
         };
         return (m.count(errCode) ? m.find(errCode)->second : unknown + std::to_string(errCode));
     }

@@ -3,19 +3,20 @@
 #include <string>
 #include <csignal>
 #include "sys/user.h"
-#include "linux/core/stat.h"
 #include "linux/core/maps.h"
 
 struct error_info {
 
-    void set(siginfo_t const&, user_regs_struct const&);
-    void set(struct stat &&);
-    void set(struct maps &&);
+    void setSigInfo(siginfo_t const&);
+    void setInstructionPointer(unsigned long ip);
+    void setStackSection(unsigned long sp, std::optional<maps::entry> entry);
+    void setMappings(std::optional<maps>&&);
+    bool empty() const;
 
     std::string explanation() const;
 
 private:
-    bool empty = true;
+    bool m_empty = true;
 
     int si_signo;
     int si_errno;
@@ -25,6 +26,6 @@ private:
     unsigned long stackPointer;
     unsigned long instructionPointer;
 
-    stat stat;
-    maps maps;
+    std::optional<maps::entry> stackEntry;
+    std::optional<maps> mappings_opt;
 };
