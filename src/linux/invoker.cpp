@@ -312,7 +312,7 @@ namespace {
                 }
             } else if (WIFEXITED(status)) {
                 // process exited normally, check return code
-                if (!result.error.hasErrorInfo()) {
+                if (!result.error.hasErrorInfo()) { // todo: maybe should gather info only from main thread?
                     result.error.storeExitCode(WEXITSTATUS(status));
                 }
                 threads.erase(child);
@@ -326,7 +326,7 @@ namespace {
 
                 // if not killed manually, set error code and additional info
                 if ((!terminatedByWatcher || signal != SIGKILL) && !result.error.hasErrorInfo()) {
-                    result.error.storeErrCode(signal);
+                    result.error.storeErrCode(signal);// todo: maybe should gather info only from main thread?
 
                     if (snapshots.count(signal)) {
                         result.error.storeErrInfo(snapshots[signal]);
