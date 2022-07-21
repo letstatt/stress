@@ -64,7 +64,7 @@ void stress::start(int argc, char *argv[]) {
 }
 
 void stress::usage() {
-    const static std::string ABOUT = "stress v1.1 by letstatt";
+    const static std::string ABOUT = "stress v1.0 by letstatt";
     const static std::string SYNTAX = "Syntax:\nstress tests [options] to_test [prime]";
 
     const static std::pair<std::string, std::string> OPTIONS[] = {
