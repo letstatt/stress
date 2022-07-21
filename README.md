@@ -1,6 +1,6 @@
 # stress
 
-This project was created to automate stress testing solutions
+This project was created to automate stress testing of solutions
 for ACM-like contests.
 
 Now the project is my sandbox for improving my programming skills,
@@ -98,7 +98,7 @@ stress -g generator solution_to_test prime
 
 * If correct answers may vary you should get a **verifier** for your
 task, which accepts the test input and the output and make the decision of it.
-* Note that verifier and prime solution couldn't be set together 
+* Note that verifier and prime solution cannot be set together.
 ```
 stress -g generator -v verifier solution_to_test
 ```
@@ -118,16 +118,15 @@ stress -g generator -tl 10 -ml 50 solution
 * If stress knows **how to run** your files, it will run them.
 * If it knows that given files **need to be compiled** at first,
 it will try to somehow compile and run them.
+* Otherwise, if it doesn't know how to process your files, it shuts down.
 ```
 stress -g gen.exe solution.cpp prime.java
 ```
 
-Otherwise, if it doesn't know how to process your files, it shuts down.
-
 ### Logging
 
 * Stress will store logs to `./stress/logs/*tag*_*time*.txt`
-* By default, tag is a filename of solution to test,
+* By default, **tag** is a filename of solution to test,
 or define it using the option.
 ```
 $stress -g gen.py -n 3 my_solution.py
