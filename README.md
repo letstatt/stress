@@ -11,12 +11,12 @@ across non-obvious obstacles that needed to be solved.
 
 You can read through anchors:
 
-* [Basics](#basics)
-* [A closer look to features](#a-closer-look)
-* [Console options explanation](#options)
-* [Making a generator](#tests-generator)
+* [Read basics](#basics)
+* [A closer look at features](#a-closer-look-at-features)
+* [Console options](#options)
+<!-- * [Making a generator](#tests-generator)
 * [Making a verifier](#verifier)
-* [Languages support](#languages-support)
+* [Languages support](#languages-support) -->
 
 Or take into account just the usage message.
 
@@ -64,21 +64,21 @@ Misc:
 ```
 
 
-## Basics
+# Basics
 
 Stress-testing is always about the testee and test sources.
 The app helps you to automate the process by generating tests
-and making them given to the program you want to test,
-logging everything well.
+(or getting from the other source) and making them given to
+the program you want to test, logging everything well.
 
 Once the verdict is not `Accepted` or OK, the input of the test
 is stored into a log file to let you reproduce the problem.
 Internal analyzer also tries to predict the possible crash reason,
 based on some debugging tools.
 
-Let me show you some patterns.
+Let me show you some basics.
 
-### Detect runtime error
+### Runtime error detection
 
 * This line runs 10 tests created by your test generator
 with solution you give to test.
@@ -88,7 +88,7 @@ with solution you give to test.
 stress -g generator solution_to_test
 ```
 
-### Check for wrong answer
+### Single correct answer
 
 * Let's define **prime solution** as a solution, which is maybe slower, but always correct.
 * If the prime set, then stress will start both solutions and check equality of outputs.
@@ -98,9 +98,9 @@ stress -g generator solution_to_test
 stress -g generator solution_to_test prime
 ```
 
-### If correct answers vary
+### Multiple correct answers
 
-* If correct answers vary you should get a verifier for your task.
+* If there are multiple correct answers, you should create or get a verifier for your task.
 * **Verifier** accepts the test input and the output and make the decision of it.
 * Prime solution and verifier cannot be set together.
 ```
@@ -109,43 +109,10 @@ stress -g generator -v verifier solution_to_test
 
 ### Execution limits
 
-* Stress supports **time** and **memory limiting** for your prime and solution to test.
-* More information is written below, in section where each parameter is describing.
+* Stress supports **time** and **memory limiting** for your solution to test.
+* Also, analogues are available for prime solution.
 ```
 stress -g generator -tl 10 -ml 50 solution
-```
-
-## A closer look
-
-### Disk writings avoidance
-* Disk I/O is **not used** when transferring generated tests and outputs data to programs.
-* Stress improves its performance that way and also cares about disks' health. 
-
-### Multithreaded stress-testing
-* It allows to start **several workers**, sharing a single console and log file.
-* Each worker processes its chain **independently** - receives a test, an output, makes a result.
-* More information is written below, in section where each parameter is describing.
-```
-stress -g generator -mt solution prime
-```
-
-### Support for various file formats
-
-* If stress knows **how to run** your files, it will run them.
-* If it knows that given files **need to be compiled** at first,
-it will try to compile and run them.
-* Otherwise, if it doesn't know how to process your files, it shuts down.
-```
-stress -g gen.exe solution.cpp prime.java
-```
-
-### Compilation cache
-* By default, files, which needs to be compiled, **will be recompiled**
-each time stress starts.
-* To use cached programs, if they are presented, special flags can be used.
-* Do not to use the option mindlessly not to test outdated programs.
-```
-stress -g gen.cpp -c gp solution.cpp prime.java
 ```
 
 ### Logging
@@ -164,9 +131,9 @@ Test 3, Runtime error
 Stress-testing is over. Solution is broken
 Check my_solution_14-02-47.txt
 ```
-In addition to test input, it also stores how long your
-solution has been working, how many memory it used
-and tries to predict the reason of `Runtime error`.
+In addition to test input, it also stores the verdict received,
+how long your solution has been working, how many memory it has
+used and tries to predict the reason of `Runtime error`.
 
 There is an example of log file:
 ```
@@ -189,9 +156,46 @@ integer division by zero
 - 8071
 ```
 
+# A closer look at features
+
+### Disk writings avoidance
+* Disk I/O is **not used** when transferring generated tests and outputs data to programs.
+* Stress improves its performance that way and also cares about disks' health.
+
+### Tiny debugger inside
+* It prevents appearance of Windows Error Reporting in case of `Runtime error`.
+* Also, it allows to predict the possible crash reason to let you find the bug easily.
+* However, precision and abilities are OS-dependent.
+
+### Multithreaded stress-testing
+* It allows to start **several workers**, sharing a single console and log file.
+* Each worker processes its chain **independently** - receives a test, an output and makes a result.
+```
+stress -g generator -mt solution prime
+```
+
+### Support for various file formats
+
+* If stress knows **how to run** your files, it will run them.
+* If it knows that given files **need to be compiled** at first,
+  it will try to compile and run them.
+* Otherwise, if it doesn't know how to process your files, it shuts down.
+```
+stress -g gen.exe solution.cpp prime.java
+```
+
+### Compilation cache
+* By default, files, which needs to be compiled, **will be recompiled**
+  each time stress starts.
+* To use cached programs, if they are presented, special flags can be used.
+* Do not to use the option mindlessly not to test outdated programs.
+```
+stress -g gen.cpp -c gp solution.cpp prime.java
+```
+
 ## Options
 
-### General
+### Basic
 
 To set the **count of tests** use parameter `-n`.
 ```
@@ -236,7 +240,7 @@ stress -g generator.cpp -c pg to_test.cpp prime.cpp
 Be careful of setting `-c` option on every testing, because
 if your solutions have same names, inappropriate cached files will be used.
 
-### Test sources
+### Test sources: generator
 
 Use parameter `-g` to set test generator. No test formatting restrictions.
 ```
@@ -250,6 +254,8 @@ Default value is maximum unsigned integer value.
 ```
 stress -g generator -seed 1337 to_test
 ```
+
+### Test sources: file
 
 Use parameter `-t` to set file with tests. Each next test must be separated
 from the previous one by two or more line separators (CR or CRLF).
@@ -340,10 +346,9 @@ Stress-testing is over. Solution is correct
 and shuts the stress-tester down (the test will be stored).
 In case of using an unstable prime solution, that sometimes got non-zero
 exit code or caught bad signals, there is a way not to interrupt
-testing by **ignoring runtime errors of prime solution**.
+testing by **ignoring runtime errors of prime solution**, use parameter `-pre`.
 
-Use parameter `-pre`.
-
+Before:
 ```
 $stress -g gen solution prime
 
@@ -352,8 +357,9 @@ Test 1, RE of prime solution
 Stress-testing is over. Solution is correct
 Check solution_14-02-47.txt
 ```
+After:
 ```
-$stress -g gen -ignorepre solution prime
+$stress -g gen -pre solution prime
 
 Test 1, RE of prime solution
 Test 2, OK
@@ -423,7 +429,7 @@ Stress-testing is over. Solution is broken
 Check lab1-A_14-02-47.txt
 ```
 
-To **disable logger** (not to write logs for that session) use parameter `-dnl`.
+To **disable logger** (not to write logs for that session) use parameter `-dnl`. This means is "Do Not Log".
 
 ```
 $stress -g gen -n 3 -dnl my_solution
@@ -438,18 +444,23 @@ Logger disabled
 
 ### Verifier
 
-To set a custom verifier, use parameter `-v`. Note, that prime solution and verifier cannot be set together.
+To set a custom verifier, use parameter `-v`.
+Note, that prime solution and verifier cannot be set together, because it's useless.
 ```
 stress -g gen -v verifier solution
 ```
 
+By default, the built-in verifier is soft, so whitespaces will be skipped.
 To enable **strict built-in verifier** (i.e. which zero-tolerant to whitespaces)
-instead of default one (which skips whitespaces), use parameter `-vstrict`.
+instead of default one, use parameter `-vstrict`.
+
+Before:
 ```
 $stress -g gen solution prime
 ...
 OK, whitespaces skipped, answers are correct
 ```
+After:
 ```
 $stress -g gen -vstrict solution prime
 ...
