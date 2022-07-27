@@ -14,9 +14,9 @@ You can read through anchors:
 * [Read basics](#basics)
 * [A closer look at features](#a-closer-look-at-features)
 * [Console options](#options)
+* [Languages support](#languages-support)
 <!-- * [Making a generator](#tests-generator)
-* [Making a verifier](#verifier)
-* [Languages support](#languages-support) -->
+* [Making a verifier](#verifier) -->
 
 Or take into account just the usage message.
 
@@ -485,3 +485,78 @@ Stress-testing is over. Solution is broken
 Check solution_17-46-47.txt
 ```
 
+## Languages support
+
+This part is about how the stress-tester tries to deal with various files.
+
+Default compilation commands can be unsuitable for you.
+Check for them ahead. Sometime I will implement feature to
+let you set compilation commands without sources editing,
+but now you can just compile your files by yourself.
+
+### PE (.exe)
+Can be run natively on Windows
+
+### Batch files (.bat)
+Can be run natively on Windows
+
+### ELF (Linux binary files)
+Can be run natively on Linux
+
+### Shell scripts (.sh)
+Can be run natively on Linux
+
+### Python (.py)
+Can be run by the command below:
+```
+Windows:
+  python {$PATH}
+Linux:
+  python3 {$PATH}
+```
+
+### C++ (.cpp)
+Can be compiled by the command below:
+```
+c++ -std=c++17 -static -w -o ${COMPILED_PATH} ${PATH}
+```
+Then it can be run as common executable.
+
+### Rust (.rs)
+Can be compiled by the command below:
+```
+rustc -o ${COMPILED_PATH} --crate-name test ${PATH}
+```
+Then it can be run as common executable.
+
+### Java (.java)
+Suitable only for single `.java` files.
+* **No classpath** support for this file format.
+* **Packages are not** also supported.
+
+Can be compiled by the command below:
+```
+javac -d ${CACHE_DIR} ${PATH}
+```
+Then in can be run as the file below:
+```
+${CACHE_DIR}/${FILENAME}.class
+```
+
+### Java (.class)
+Suitable only for single `.class` files.
+* **No classpath** support for this file format.
+* **Packages are not** also supported.
+
+Can be run by the command below:
+```
+java -cp ${DIR} ${FILENAME}
+```
+
+### Java (.jar)
+Seems to be the best variant to test Java applications.
+
+Can be run by the command below:
+```
+java -jar ${PATH}
+```
