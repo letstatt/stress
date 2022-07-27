@@ -81,27 +81,27 @@ Let me show you some basics.
 ### Runtime error detection
 
 * This line runs 10 tests created by your test generator
-with solution you give to test.
-* Generator - is not the only one source of tests, find additional info below.
-* It's able to check **only** for `Runtime error` verdict.
+with the solution you give to test.
+* Generators are not the only one source of tests, find additional info below.
+* It's able to check **only** for the `Runtime error` verdict.
 ```
 stress -g generator solution_to_test
 ```
 
 ### Single correct answer
 
-* Let's define **prime solution** as a solution, which is maybe slower, but always correct.
-* If the prime set, then stress will start both solutions and check equality of outputs.
+* Let's define a **prime solution** as a solution, which is maybe slower, but always correct.
+* If the prime is set, then stress will start both solutions and check equality of outputs.
 * By default, the check is soft, so whitespaces will be skipped.
-* It can check for `Wrong answer` verdict.
+* It can check for the `Wrong answer` verdict.
 ```
 stress -g generator solution_to_test prime
 ```
 
 ### Multiple correct answers
 
-* If there are multiple correct answers, you should create or get a verifier for your task.
-* **Verifier** accepts the test input and the output and make the decision of it.
+* If there are multiple correct answers, you should create or get a **verifier** for your task.
+* Verifiers accept the test input and the output and make the decision about it.
 * Prime solution and verifier cannot be set together.
 ```
 stress -g generator -v verifier solution_to_test
@@ -118,7 +118,7 @@ stress -g generator -tl 10 -ml 50 solution
 ### Logging
 
 * Stress will store logs to `./stress/logs/*tag*_*time*.txt`
-* By default, **tag** is a filename of solution to test,
+* By default, **tag** is a filename of the solution to test,
 or define it using the option.
 * Logging can be disabled by special option.
 ```
@@ -132,7 +132,7 @@ Stress-testing is over. Solution is broken
 Check my_solution_14-02-47.txt
 ```
 In addition to test input, it also stores the verdict received,
-how long your solution has been working, how many memory it has
+how long your solution has been working, how much memory it has
 used and tries to predict the reason of `Runtime error`.
 
 There is an example of log file:
@@ -163,7 +163,7 @@ integer division by zero
 * Stress improves its performance that way and also cares about disks' health.
 
 ### Tiny debugger inside
-* It prevents appearance of Windows Error Reporting in case of `Runtime error`.
+* It prevents the appearance of Windows Error Reporting in case of `Runtime error`.
 * Also, it allows to predict the possible crash reason to let you find the bug easily.
 * However, precision and abilities are OS-dependent.
 
@@ -187,7 +187,7 @@ stress -g gen.exe solution.cpp prime.java
 ### Compilation cache
 * By default, files, which needs to be compiled, **will be recompiled**
   each time stress starts.
-* To use cached programs, if they are presented, special flags can be used.
+* To use cached programs, if they are present, special flags can be used.
 * Do not to use the option mindlessly not to test outdated programs.
 ```
 stress -g gen.cpp -c gp solution.cpp prime.java
@@ -238,7 +238,7 @@ stress -g generator.cpp -c pg to_test.cpp prime.cpp
 ```
 
 Be careful of setting `-c` option on every testing, because
-if your solutions have same names, inappropriate cached files will be used.
+if your solutions have the same names, inappropriate cached files will be used.
 
 ### Test sources: generator
 
@@ -281,7 +281,7 @@ $cat tests.txt
 ### Time and memory
 
 Parameter `-st` can be used to see **how much time** did
-your solution spend on each test and **how many memory** did it use.
+your solution spend on each test and **how much memory** did it use.
 
 It tries to measure time and memory as accurate as possible.
 ```
