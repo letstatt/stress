@@ -1,7 +1,7 @@
-#include "parsing/parser.h"
+#include "parsing/args.h"
 #include <cstring>
 
-runtime_config parser::parseArgs(int argc, char *argv[]) {
+runtime_config args::parseArgs(int argc, char *argv[]) {
     namespace fs = std::filesystem;
     using cat = units::unit_category;
     runtime_config cfg;

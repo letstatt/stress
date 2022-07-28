@@ -15,7 +15,7 @@ LIST(APPEND sources
         "src/global/logger.cpp"
         "src/global/core/run.cpp"
         "src/global/core/session.cpp"
-        "src/global/parsing/parser.cpp"
+        "src/global/parsing/args.cpp"
         "src/global/units/unit.cpp"
         "src/global/units/generator.cpp"
         "src/global/units/to_test.cpp"

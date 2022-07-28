@@ -1,5 +1,5 @@
 #include "stress.h"
-#include "parsing/parser.h"
+#include "parsing/args.h"
 #include "logger.h"
 #include "terminal.h"
 #include "core/run.h"
@@ -22,7 +22,7 @@ void build_units(runtime_config &);
 void worker(runtime_config &, session &);
 
 void stress::start(int argc, char *argv[]) {
-    runtime_config cfg = parser::parseArgs(argc, argv);
+    runtime_config cfg = args::parseArgs(argc, argv);
 
     // todo: is it needed?
     try {
