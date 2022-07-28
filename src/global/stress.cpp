@@ -85,15 +85,15 @@ void stress::usage() {
             {"-pml mb",    "Set memory limit for prime"},
             {"-pre",       "Do not stop if prime got RE\n"},
             {"Threading:", ""},
-            {"-mt",        "Multithreading"},
-            {"-w",         "Count of workers\n"},
+            {"-mt",        "Allow multithreaded testing"},
+            {"-w n",       "Set count of workers\n"},
             {"Logging:",   ""},
             {"-stderr",    "Log stderr on runtime errors (useful with Java, Python, etc.)"},
             {"-tag",       "Set tag of log file"},
             {"-dnl",       "Disable logger (do not log)\n"},
             {"Verifier:",  ""},
             {"-v file",    "Path to output verifier"},
-            {"-vstrict",   "Use strict comparison with prime solution\n"},
+            {"-vstrict",   "Use strict comparison of outputs\n"},
             {"Misc:",      ""},
             {"-cv",        "Collapse identical verdicts\n"}
     };

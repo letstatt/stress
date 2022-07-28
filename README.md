@@ -47,8 +47,8 @@ Prime:
 -pre         Do not stop if prime got RE
 
 Threading:
--mt          Multithreading
--w           Count of workers
+-mt          Allow multithreaded testing
+-w n         Set count of workers
 
 Logging:
 -stderr      Log stderr on runtime errors (useful with Java, Python, etc.)
@@ -57,7 +57,7 @@ Logging:
 
 Verifier:
 -v file      Path to output verifier
--vstrict     Use strict comparison with prime solution
+-vstrict     Use strict comparison of outputs
 
 Misc:
 -cv          Collapse identical verdicts
