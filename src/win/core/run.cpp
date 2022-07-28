@@ -9,9 +9,20 @@ namespace {
                 {EXCEPTION_STACK_OVERFLOW,        "stack overflow"},
                 {EXCEPTION_ARRAY_BOUNDS_EXCEEDED, "array index out of bounds"},
                 {EXCEPTION_ILLEGAL_INSTRUCTION,   "illegal instruction"},
-                {EXCEPTION_INT_DIVIDE_BY_ZERO,    "division by zero"},
-                {EXCEPTION_FLT_DIVIDE_BY_ZERO,    "division by zero"},
-                {EXCEPTION_PRIV_INSTRUCTION,      "private instruction execution"}
+                {EXCEPTION_FLT_DENORMAL_OPERAND,  "floating-point denormal operand"},
+                {EXCEPTION_FLT_DIVIDE_BY_ZERO,    "floating-point division by zero"},
+                {EXCEPTION_FLT_INEXACT_RESULT,    "floating-point inexact result"},
+                {EXCEPTION_FLT_INVALID_OPERATION, "floating-point invalid operation"},
+                {EXCEPTION_FLT_OVERFLOW,          "floating-point overflow"},
+                {EXCEPTION_FLT_STACK_CHECK,       "stack overflowed or underflowed because of floating-point operation"},
+                {EXCEPTION_FLT_UNDERFLOW,         "floating-point underflow"},
+                {EXCEPTION_INT_DIVIDE_BY_ZERO,    "integer division by zero"},
+                {EXCEPTION_INT_OVERFLOW,          "integer overflow"},
+                {EXCEPTION_PRIV_INSTRUCTION,      "private instruction execution"},
+                {EXCEPTION_GUARD_PAGE,            "guard page access attempt"},
+                {EXCEPTION_IN_PAGE_ERROR,         "unable to load the page"},
+                {EXCEPTION_PRIV_INSTRUCTION,      "privileged instruction"},
+                {EXCEPTION_DATATYPE_MISALIGNMENT, "access to misaligned data"}
         };
         return (m.count(errCode) ? m.find(errCode)->second : unknown + std::to_string(errCode));
     }
@@ -35,7 +46,7 @@ std::string execution_error::errInfoExplanation() const {
     }
 }
 
-void execution_error::storeErrInfo(error_info const& err) {
+void execution_error::storeErrInfo(error_info const &err) {
     if (info) {
         errInfoClear();
     }
