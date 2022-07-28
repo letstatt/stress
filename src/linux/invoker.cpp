@@ -1,8 +1,8 @@
-#define INVOKER_MACRO
+#define INVOKER_MACROS
 
 #include "invoker.h"
 
-#undef INVOKER_MACRO
+#undef INVOKER_MACROS
 
 #include "terminal.h"
 #include "core/runtime_config.h"
@@ -362,7 +362,9 @@ namespace invoker {
     const char EXEC_EXT[] = "";
     const char SHELL_EXT[] = ".sh";
 
-    void initializer::customInit(exec_rules &, comp_rules &, substitutions_map &) {}
+    void initializer::customInit(exec_rules & executor, comp_rules &, substitutions_map &) {
+        addRules(executor, E_RULE(".py", "python3", "${PATH}"));
+    }
 }
 
 namespace invoker {
@@ -561,5 +563,4 @@ namespace invoker {
             }
         }
     }
-
 }
