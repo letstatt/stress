@@ -13,10 +13,10 @@ You can read through anchors:
 
 * [Read basics](#basics)
 * [A closer look at features](#a-closer-look-at-features)
-* [Console options](#options)
+* [Overview of console options](#options)
 * [Languages support](#languages-support)
-<!-- * [Making a generator](#tests-generator)
-* [Making a verifier](#verifier) -->
+* [What is a generator?](#generator)
+* [What is a verifier?](#verifier)
 
 Or take into account just the usage message.
 
@@ -560,3 +560,66 @@ Can be run by the command below:
 ```
 java -jar ${PATH}
 ```
+
+## Generator
+
+A generator is one of sources of tests.
+It can be passed to stress by parameter `-g`.
+
+### What does it do
+1. Generates a valid test corresponding to your task.
+2. Writes it to `stdout` (e.g. `printf`, `cout`, `print`, `System.out.print`, etc.).
+
+If a generator can't be started or get runtime error,
+then the stress shuts down - it is a critical error.
+
+### Note for Windows users
+It has been seen, that on MinGW C++ line separators in `stdout` are
+automatically converted to `\r\n`.
+
+Since that happens, if you need to have strictly `\n` instead of `\r\n` in your
+tests, use the pattern below to change the behavior:
+
+```
+#include <fcntl.h>
+#include <io.h>
+...
+
+int main() {
+    _setmode(fileno(stdout), _O_BINARY);
+    ...
+}
+
+```
+
+This sets `stdout` to binary mode.
+
+## Verifier
+
+A custom verifier can be used to approve output of the solution to test in a more appropriate way.
+
+Why? Because built-in verifier never allows multiple correct answers, but only checks
+for equality of the outputs between solution to test and prime solution.
+
+Interaction between stress and verifier is through `stdin` and `stdout`.
+
+### It receives the following things from `stdin` 
+
+1. A test
+2. Line separator
+3. Output of solution to test
+
+It is important to understand to what the using of line separator leads.
+For example, if you use `input()` in Python to parse the input,
+you should skip the line by an extra `input()` calling.
+
+### Correct verifier answer
+is a **printed** word "OK" (also "AC"), "WA" or "PE" to `stdout` without quotes.
+
+1. "OK" or "AC" means the answer is correct.
+2. "WA" means the answer is wrong.
+3. "PE" means "Presentation error". It is an optional verifier status saying that the answer has improper format.
+
+If verifier can't be started, get runtime error or print the improper result
+(so-called "Verification error"), then the stress shuts down - it
+is a critical error.
