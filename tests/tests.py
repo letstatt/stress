@@ -4,7 +4,7 @@ import re
 import sys
 from enum import Enum
 import subprocess
-import platform
+import shutil
 
 
 class TestProgress(Enum):
@@ -12,6 +12,7 @@ class TestProgress(Enum):
     TESTING = 2
     FAILED = 3
     OK = 4
+    SKIPPED = 5
 
 
 def load_sections():
@@ -55,70 +56,81 @@ def load_tests():
                         ids.add(g[1])
 
         assert len(ids) == len(s["tests"]),\
-            "non-unique tests' ids assertion in section " + s["entry"].path
+            "non-unique tests' ids assertion in section " + s["name"]
         s.pop("entry")
     return sections
 
 
-def print_progress(tests_progress):
-    os.system("clear" if platform.system() == "Linux" else "cls")
+def update_progress(section_index, test_index, status, indentation, bottom):
+    print("\x1B[H", end="")  # move cursor to (0, 0)
+    print("\x1B[" + str(2 + section_index) + "B", end="")  # move cursor
+    print("\x1B[" + str(indentation + test_index) + "C", end="")  # move cursor
+    ch = "_"
+    if status == TestProgress.TESTING:
+        ch = "*"
+    elif status == TestProgress.OK:
+        ch = "+"
+    elif status == TestProgress.FAILED:
+        ch = "X"
+    elif status == TestProgress.SKIPPED:
+        ch = "~"
+    print(ch + "\x1B[H", end="")  # edit symbol and move cursor to (0, 0)
+    print("\x1B[" + str(bottom) + "B", end="")  # move cursor to bottom
+    sys.stdout.flush()
+
+
+def print_progress(tests):
     print("\x1B[2J\x1B[HTests:")
     print()
     indentation = 0
-    for section in tests_progress:
+    for section in tests:
         indentation = max(indentation, len(section["name"]))
     indentation += 12
-    for i in range(len(tests_progress)):
-        section = tests_progress[i]
+    for i in range(len(tests)):
+        section = tests[i]
         print(i + 1, section["name"], end="")
         print(" " * (indentation - len(section["name"])), end="")
-        print("[", end="")
-        for test in section["tests"]:
-            ch = "_"
-            if test["state"] == TestProgress.TESTING:
-                ch = "*"
-            elif test["state"] == TestProgress.OK:
-                ch = "+"
-            elif test["state"] == TestProgress.FAILED:
-                ch = "X"
-            print(ch, end="")
-        print("]")
+        print("[" + "_" * len(section["tests"]) + "]")
     print()
+    return lambda section_index, test_index, status:\
+        update_progress(section_index, test_index, status, indentation + 3, len(tests) + 3)
 
 
 def run_test(test_entry):
     test_entry["state"] = TestProgress.TESTING
-    stderr = b""
+    test_entry["update_console"]()
+    stderr = ""
 
     with subprocess.Popen([sys.executable, "test.py"],
                           cwd=test_entry["cwd"],
+                          text=True,
                           stdin=subprocess.PIPE,
                           stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE) as p:
         p.stdin.close()
         p.stdout.close()
-        for line in iter(p.stderr.readline, b''):
+        for line in iter(p.stderr.readline, ''):
             stderr += line
         p.wait()
         exit_code = p.returncode
 
     if exit_code != 0:
         test_entry["state"] = TestProgress.FAILED
+        test_entry["update_console"]()
         return {
             "test": test_entry,
             "exit_code": exit_code,
-            "stderr": bytes.decode(stderr, encoding="utf-8")
+            "stderr": stderr
         }
     else:
         test_entry["state"] = TestProgress.OK
+        test_entry["update_console"]()
         return None
 
 
 def run_tests(section_name, tests):
     for test in tests:
-        print_progress(sections)
         result = run_test(test)
-        print_progress(sections)
         if result is not None:
             print("Test failed")
             print("Name:", section_name + "/" + result["test"]["name"])
@@ -129,11 +141,38 @@ def run_tests(section_name, tests):
     return True
 
 
-sections = load_tests()
+def clean(tests):
+    for section in tests:
+        for test in section["tests"]:
+            for entry in os.scandir(test["cwd"]):
+                if entry.is_dir() and entry.name == "stress":
+                    shutil.rmtree(entry)
 
-for section in sections:
+
+tests = load_tests()
+clean(tests)
+
+editor_func = print_progress(tests)
+success = True
+
+for i in range(len(tests)):
+    for j in range(len(tests[i]["tests"])):
+        tests[i]["tests"][j]["update_console"] =\
+            lambda di=i, dj=j: editor_func(di, dj, tests[di]["tests"][dj]["state"])
+
+
+for section in tests:
+    if len(sys.argv) > 1 and section["name"] not in sys.argv:
+        for test in section["tests"]:
+            test["state"] = TestProgress.SKIPPED
+            test["update_console"]()
+        continue
     if not run_tests(section["name"], section["tests"]):
+        success = False
         break
+
+if success:
+    clean(tests)
 
 # Tests:
 # init             [**_____]
