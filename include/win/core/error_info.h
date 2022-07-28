@@ -2,6 +2,8 @@
 
 #include <string>
 #include <windows.h>
+#include <memoryapi.h>
+#include <optional>
 #undef min
 #undef max
 
@@ -11,6 +13,7 @@ struct error_info {
     };
 
     void storeAccessViolation(ULONG type, ULONG addr);
+    void storeMemoryInfo(MEMORY_BASIC_INFORMATION info);
 
     std::string explanation() const;
 
@@ -21,4 +24,5 @@ private:
     ACCESS_VIOLATION_TYPE avType = UNKNOWN;
     ULONG avCode{};
     ULONG address{};
+    std::optional<MEMORY_BASIC_INFORMATION> mbi;
 };

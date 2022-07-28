@@ -11,6 +11,7 @@
 #include "win/core/error_info.h"
 
 #include <windows.h>
+#include <memoryapi.h>
 #include <psapi.h>
 #include <thread>
 #include <optional>
@@ -128,6 +129,8 @@ namespace {
     }
 
     DWORD debugger(HANDLE hProcess, error_info& errInfo) {
+        MEMORY_BASIC_INFORMATION mb_info;
+        memset(&mb_info, 0, sizeof(MEMORY_BASIC_INFORMATION));
         DWORD exceptionCode = 0;
         DEBUG_EVENT event;
         bool debugging = true;
@@ -158,6 +161,14 @@ namespace {
                     if (!event.u.Exception.dwFirstChance) {
                         // store additional info
                         if (exceptionCode == EXCEPTION_ACCESS_VIOLATION) {
+                            if (VirtualQueryEx(
+                                    hProcess,
+                                    reinterpret_cast<void*>(event.u.Exception.ExceptionRecord.ExceptionInformation[1]),
+                                    &mb_info,
+                                    sizeof(MEMORY_BASIC_INFORMATION)) != 0) {
+                                errInfo.storeMemoryInfo(mb_info);
+                            }
+
                             errInfo.storeAccessViolation(
                                     event.u.Exception.ExceptionRecord.ExceptionInformation[0],
                                     event.u.Exception.ExceptionRecord.ExceptionInformation[1]);
