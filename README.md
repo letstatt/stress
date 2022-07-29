@@ -9,16 +9,21 @@ across non-obvious obstacles that needed to be solved.
 
 ## Navigation
 
-You can read through anchors:
+You can read through anchors.
 
+Introduction:
 * [Read basics](#basics)
 * [A closer look at features](#a-closer-look-at-features)
+
+Things you may need to create:
+* [What is a generator?](#generator)
+* [What is a custom verifier?](#custom-verifier)
+
+Advanced view:
 * [Overview of console options](#options)
 * [Languages support](#languages-support)
-* [What is a generator?](#generator)
-* [What is a verifier?](#verifier)
 
-Or take into account just the usage message.
+Or take a look at the usage message:
 
 ```
 stress v1.0 by letstatt
@@ -56,7 +61,7 @@ Logging:
 -dnl         Disable logger (do not log)
 
 Verifier:
--v file      Path to output verifier
+-v file      Path to custom verifier
 -vstrict     Use strict comparison of outputs
 
 Misc:
@@ -163,9 +168,9 @@ integer division by zero
 * Stress improves its performance that way and also cares about disks' health.
 
 ### Tiny debugger inside
-* It prevents the appearance of Windows Error Reporting in case of `Runtime error`.
+* It prevents execution of Windows Error Reporting in case of `Runtime error`.
 * Also, it allows to predict the possible crash reason to let you find the bug easily.
-* However, precision and abilities are OS-dependent.
+* However, precision and abilities may be OS-dependent.
 
 ### Multithreaded stress-testing
 * It allows to start **several workers**, sharing a single console and log file.
@@ -192,6 +197,73 @@ stress -g gen.exe solution.cpp prime.java
 ```
 stress -g gen.cpp -c gp solution.cpp prime.java
 ```
+
+# Things you may need to create
+
+## Generator
+
+A generator is one of sources of tests.
+It can be passed to stress by parameter `-g`.
+
+### What does it do
+1. Optionally, read an unsigned integer from `stdin` to initialize random.
+   Read more about it [here](#test-sources-generator).
+2. Generates a valid test corresponding to your task.
+3. Writes it to `stdout` (e.g. `printf`, `cout`, `print`, `System.out.print`, etc.).
+
+If a generator can't be started or get runtime error,
+then the stress shuts down - it is a critical error.
+
+### Note for Windows users
+It has been seen, that on MinGW C++ line separators in `stdout` are
+automatically converted to `\r\n`.
+
+Since that happens, if you need to have **strictly** `\n` instead of `\r\n` in your
+tests, use the pattern below to change the behavior:
+
+```
+#include <fcntl.h>
+#include <io.h>
+...
+
+int main() {
+    _setmode(fileno(stdout), _O_BINARY);
+    ...
+}
+
+```
+
+This sets `stdout` to binary mode.
+
+## Custom verifier
+
+A custom verifier can be used to approve output of the solution to test in a more appropriate way.
+
+Why? Because built-in verifier never allows multiple correct answers, but only checks
+for equality of the outputs between solution to test and prime solution.
+
+Interaction between stress and verifier is through `stdin` and `stdout`.
+
+### It receives the following things from `stdin`
+
+1. A test
+2. Line separator
+3. Output of solution to test
+
+It is important to understand to what the using of line separator leads.
+For example, if you use `input()` in Python to parse the input,
+you should skip the line by an extra `input()` calling.
+
+### Correct verifier answer
+is a **printed** word "OK" (also "AC"), "WA" or "PE" to `stdout` without quotes.
+
+1. "OK" or "AC" means the answer is correct.
+2. "WA" means the answer is wrong.
+3. "PE" means "Presentation error". It is an optional verifier status saying that the answer has improper format.
+
+If verifier can't be started, get runtime error or print the improper result
+(so-called "Verification error"), then the stress shuts down - it
+is a critical error.
 
 ## Options
 
@@ -247,7 +319,8 @@ Use parameter `-g` to set test generator. No test formatting restrictions.
 stress -g generator to_test
 ```
 
-Each time generator starts it gets a random unsigned integer in stdin to init its random.
+Each time generator starts it gets a random unsigned integer in `stdin` to
+provide you a way to init random easily.
 It's recommended to use the number to let you reproduce the test generation chain.
 To manually initialize tester's random generator, use parameter `-seed`.
 Default value is maximum unsigned integer value.
@@ -560,66 +633,3 @@ Can be run by the command below:
 ```
 java -jar ${PATH}
 ```
-
-## Generator
-
-A generator is one of sources of tests.
-It can be passed to stress by parameter `-g`.
-
-### What does it do
-1. Generates a valid test corresponding to your task.
-2. Writes it to `stdout` (e.g. `printf`, `cout`, `print`, `System.out.print`, etc.).
-
-If a generator can't be started or get runtime error,
-then the stress shuts down - it is a critical error.
-
-### Note for Windows users
-It has been seen, that on MinGW C++ line separators in `stdout` are
-automatically converted to `\r\n`.
-
-Since that happens, if you need to have strictly `\n` instead of `\r\n` in your
-tests, use the pattern below to change the behavior:
-
-```
-#include <fcntl.h>
-#include <io.h>
-...
-
-int main() {
-    _setmode(fileno(stdout), _O_BINARY);
-    ...
-}
-
-```
-
-This sets `stdout` to binary mode.
-
-## Verifier
-
-A custom verifier can be used to approve output of the solution to test in a more appropriate way.
-
-Why? Because built-in verifier never allows multiple correct answers, but only checks
-for equality of the outputs between solution to test and prime solution.
-
-Interaction between stress and verifier is through `stdin` and `stdout`.
-
-### It receives the following things from `stdin` 
-
-1. A test
-2. Line separator
-3. Output of solution to test
-
-It is important to understand to what the using of line separator leads.
-For example, if you use `input()` in Python to parse the input,
-you should skip the line by an extra `input()` calling.
-
-### Correct verifier answer
-is a **printed** word "OK" (also "AC"), "WA" or "PE" to `stdout` without quotes.
-
-1. "OK" or "AC" means the answer is correct.
-2. "WA" means the answer is wrong.
-3. "PE" means "Presentation error". It is an optional verifier status saying that the answer has improper format.
-
-If verifier can't be started, get runtime error or print the improper result
-(so-called "Verification error"), then the stress shuts down - it
-is a critical error.

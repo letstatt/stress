@@ -92,7 +92,7 @@ void stress::usage() {
             {"-tag",       "Set tag of log file"},
             {"-dnl",       "Disable logger (do not log)\n"},
             {"Verifier:",  ""},
-            {"-v file",    "Path to output verifier"},
+            {"-v file",    "Path to custom verifier"},
             {"-vstrict",   "Use strict comparison of outputs\n"},
             {"Misc:",      ""},
             {"-cv",        "Collapse identical verdicts\n"}
