@@ -35,7 +35,7 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
     auto parseUnitCategory = [&](int i, std::unordered_set<cat> &s) {
         if (i == argc - 1) {
             throw std::runtime_error(
-                    "[!] Expected a unit categories string"); // todo: a/an?
+                    "[!] Expected a unit categories string");
         }
         const std::string tokens = argv[i + 1];
         const static std::unordered_map<char, cat> m = {
@@ -78,19 +78,40 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
 
         // generator_config
         else if (!strcmp(argv[i], "-g")) {
-            if (cfg.useFileWithTests) {
-                throw std::runtime_error(
-                        "[!] Cannot set generator and file with tests together");
+            switch (cfg.testsSource) {
+                case tests_source::EXECUTABLE:
+                    [[fallthrough]];
+                case tests_source::UNSPECIFIED:
+                    break;
+                default:
+                    throw std::runtime_error("[!] Use only one source of tests");
             }
             parsePath(i++, cfg.generator.file);
+            cfg.testsSource = tests_source::EXECUTABLE;
 
-        } else if (!strcmp(argv[i], "-t")) {
-            if (!cfg.useFileWithTests && !cfg.generator.empty()) {
-                throw std::runtime_error(
-                        "[!] Cannot set generator and file with tests together");
+        } else if (!strcmp(argv[i], "-f")) {
+            switch (cfg.testsSource) {
+                case tests_source::FILE:
+                    [[fallthrough]];
+                case tests_source::UNSPECIFIED:
+                    break;
+                default:
+                    throw std::runtime_error("[!] Use only one source of tests");
             }
             parsePath(i++, cfg.generator.file);
-            cfg.useFileWithTests = true;
+            cfg.testsSource = tests_source::FILE;
+
+        } else if (!strcmp(argv[i], "-d")) {
+            switch (cfg.testsSource) {
+                case tests_source::DIR:
+                    [[fallthrough]];
+                case tests_source::UNSPECIFIED:
+                    break;
+                default:
+                    throw std::runtime_error("[!] Use only one source of tests");
+            }
+            parsePath(i++, cfg.generator.file);
+            cfg.testsSource = tests_source::DIR;
 
         } else if (!strcmp(argv[i], "-s")) {
             parseUnsigned(i++, cfg.initialSeed);

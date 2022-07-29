@@ -3,6 +3,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include "units/unit.h"
+#include "tests_source.h"
 
 namespace constraints {
     constexpr uint32_t MIN_TIME_LIMIT_MS = 10;
@@ -18,7 +19,7 @@ struct limits {
 
 struct generator_config {
     uint32_t initialSeed = 0;
-    bool useFileWithTests = false;
+    tests_source testsSource = tests_source::UNSPECIFIED;
 };
 
 struct invoker_config {

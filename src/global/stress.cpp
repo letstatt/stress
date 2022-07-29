@@ -74,7 +74,8 @@ void stress::usage() {
             {"-n n",       "Run n tests (default: 10)\n"},
             {"Tests:",     ""},
             {"-g file",    "Path to test generator"},
-            {"-t file",    "Path to file with tests"},
+            {"-f file",    "Path to file with tests"},
+            {"-d dir",     "Path to directory with tests"},
             {"-s seed",    "Start generator with a specific seed\n"},
             {"Limits:",    ""},
             {"-st",        "Display time and peak memory statistics"},
@@ -118,7 +119,7 @@ void build_units(runtime_config &cfg) {
             units::unit_category::GENERATOR,
             std::dynamic_pointer_cast<units::unit>(
                     std::make_shared<units::generator>(
-                            cfg.useFileWithTests,
+                            cfg.testsSource,
                             cfg.generator)));
     cfg.units.emplace(
             units::unit_category::TO_TEST,

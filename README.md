@@ -38,7 +38,8 @@ General:
 
 Tests:
 -g file      Path to test generator
--t file      Path to file with tests
+-f file      Path to file with tests
+-d dir       Path to directory with tests
 -s seed      Start generator with a specific seed
 
 Limits:

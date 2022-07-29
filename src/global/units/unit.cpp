@@ -7,14 +7,14 @@ namespace units {
 
     void proto_unit::requireExistence() const {
         if (!std::filesystem::is_regular_file(file)) {
-            throw std::runtime_error("[!] " + toString() + "is not a regular file");
+            throw std::runtime_error("[!] " + toString() + " is not a regular file");
         }
     }
 
     std::string proto_unit::category() const {
         switch (cat) {
             case unit_category::GENERATOR:
-                return "generator";
+                return "source of tests";
             case unit_category::TO_TEST:
                 return "solution to test";
             case unit_category::PRIME:

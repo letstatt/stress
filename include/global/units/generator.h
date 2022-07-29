@@ -1,6 +1,7 @@
 #pragma once
 
 #include "unit.h"
+#include "core/tests_source.h"
 #include <fstream>
 #include <mutex>
 
@@ -9,22 +10,20 @@ struct test_result;
 
 namespace units {
 
-// TODO: tag-dispatching
+// TODO: tag-dispatching (?)
     class generator : public unit {
-        enum class generator_category {
-            EXECUTABLE,
-            READABLE
-        };
-
-        generator_category cat;
+        tests_source cat;
         std::ifstream reader;
+        std::filesystem::directory_iterator iter;
+        std::filesystem::directory_iterator iter_end{};
         std::mutex mutex;
 
-        bool readTest(std::string &);
+        bool readNextTestFromFile(std::string &);
+        bool readNextTestFromDir(std::string &);
 
     public:
 
-        generator(bool useFileWithTests, proto_unit const &u);
+        generator(tests_source testsSource, proto_unit const &u);
 
         bool prepare(runtime_config &cfg) override;
 
