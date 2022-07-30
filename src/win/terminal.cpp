@@ -1,6 +1,7 @@
 #include "terminal.h"
 #include <windows.h>
 #include <conio.h>
+#include <csignal>
 
 // terminal_token implementation
 

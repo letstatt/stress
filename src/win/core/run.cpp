@@ -1,5 +1,6 @@
 #include "core/run.h"
 #include "win/core/error_info.h"
+#include <unordered_map>
 
 namespace {
     std::string errorCodeExplanation(size_t errCode) {

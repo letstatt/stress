@@ -15,7 +15,7 @@ namespace {
     uint16_t interruptionAttempts = 0;
 
     void forceTermination() {
-        static std::atomic_flag termination = false;
+        static std::atomic_flag termination; // clear state since C++20
         if (!termination.test_and_set()) {
             // enter branch only once.
             std::terminate();

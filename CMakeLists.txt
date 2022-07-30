@@ -47,10 +47,12 @@ if (WIN32)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
     endif()
 else()
-    set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic -lpthread")
+    set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic -pthread")
 endif()
 
 # build
 add_executable(stress ${sources})
 
-target_compile_options(stress PRIVATE -Wall -Wextra -Wpedantic -Werror)
+if (!MSVC)
+    target_compile_options(stress PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()
