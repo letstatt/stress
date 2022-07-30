@@ -646,12 +646,22 @@ Can be run natively on Linux
 
 ### Python (.py)
 Can be run by the command below:
-```
+
 Windows:
-  python {$PATH}
-Linux:
-  python3 {$PATH}
 ```
+python {$PATH}
+```
+Linux:
+```
+python3 {$PATH}
+```
+
+### C (.c)
+Can be compiled by the command below:
+```
+gcc -std=c11 -static -w -o ${COMPILED_PATH} ${PATH}
+```
+Then it can be run as common executable.
 
 ### C++ (.cpp)
 Can be compiled by the command below:
@@ -664,6 +674,13 @@ Then it can be run as common executable.
 Can be compiled by the command below:
 ```
 rustc -o ${COMPILED_PATH} --crate-name test ${PATH}
+```
+Then it can be run as common executable.
+
+### Golang (.go)
+Can be compiled by the command below:
+```
+go build -o ${COMPILED_PATH} ${PATH}
 ```
 Then it can be run as common executable.
 
@@ -697,4 +714,18 @@ Seems to be the best variant to test Java applications.
 Can be run by the command below:
 ```
 java -jar ${PATH}
+```
+
+### Kotlin (.kt)
+It's a very slow implementation (sometime I will get rid
+of `-include-runtime` flag). Also, I don't know restrictions
+of this method, because I'm not familiar with the language.
+
+Can be compiled by the command below:
+```
+kotlinc ${PATH} -include-runtime -d ${CACHE_DIR}/${FILENAME}.jar
+```
+Then in can be run as the file below:
+```
+${CACHE_DIR}/${FILENAME}.jar
 ```
