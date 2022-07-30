@@ -362,8 +362,13 @@ namespace invoker {
     const char EXEC_EXT[] = "";
     const char SHELL_EXT[] = ".sh";
 
-    void initializer::customInit(exec_rules & executor, comp_rules &, substitutions_map &) {
-        addRules(executor, E_RULE(".py", "python3", "${PATH}"));
+    void initializer::customInit(exec_rules & executor, comp_rules & compiler, substitutions_map &) {
+        addRules(executor,
+                 E_RULE(".py", "python3", "${PATH}"));
+
+        addRules(compiler,
+                 C_RULE(".kt", "${CACHE_DIR}/${FILENAME}.jar", "kotlinc", "${PATH}",
+                        "-include-runtime", "-d", "${CACHE_DIR}/${FILENAME}.jar"));
     }
 }
 

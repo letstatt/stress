@@ -82,11 +82,15 @@ namespace invoker {
 
     private:
         template<typename T, typename R>
-        static void addRules(T &rules, R const &rule);
+        inline static void addRules(T &rules, R const &rule) {
+            rules.emplace(rule);
+        }
 
         template<typename T, typename R, typename... Args>
-        static void addRules(
-                T &rules, R const &rule, Args const &... args);
+        inline static void addRules(T &rules, R const &rule, Args const &... args) {
+            addRules(rules, rule);
+            addRules(rules, args...);
+        }
 
         // OS-independent
         static void init(exec_rules &, comp_rules &, substitutions_map &);

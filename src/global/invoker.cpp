@@ -38,17 +38,6 @@ namespace invoker {
         addRules(compilationRules, rule);
     }
 
-    template<typename T, typename R>
-    void initializer::addRules(T &rules, R const &rule) {
-        rules.emplace(rule);
-    }
-
-    template<typename T, typename R, typename... Args>
-    void initializer::addRules(T &rules, R const &rule, Args const &... args) {
-        addRules(rules, rule);
-        addRules(rules, args...);
-    }
-
     /*
      * Substitutions:
      * ${COMPILED_PATH} -> ${CACHE_DIR}/${FILENAME}${EXEC_EXT}
@@ -95,7 +84,9 @@ namespace invoker {
                  C_RULE(".rs", "${COMPILED_PATH}", "rustc", "-o",
                         "${COMPILED_PATH}", "--crate-name", "test", "${PATH}"),
                  C_RULE(".java", "${CACHE_DIR}/${FILENAME}.class", "javac",
-                        "-d", "${CACHE_DIR}", "${PATH}"));
+                        "-d", "${CACHE_DIR}", "${PATH}"),
+                 C_RULE(".go", "${COMPILED_PATH}", "go", "build", "-o",
+                        "${COMPILED_PATH}", "${PATH}"));
 
         customInit(executor, compiler, m);
     }

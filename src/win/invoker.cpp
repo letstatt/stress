@@ -197,8 +197,13 @@ namespace invoker {
     const char EXEC_EXT[] = ".exe";
     const char SHELL_EXT[] = ".bat";
 
-    void initializer::customInit(exec_rules & executor, comp_rules &, substitutions_map &) {
-        addRules(executor, E_RULE(".py", "python", "${PATH}"));
+    void initializer::customInit(exec_rules & executor, comp_rules & compiler, substitutions_map &) {
+        addRules(executor,
+                 E_RULE(".py", "python", "${PATH}"));
+
+        addRules(compiler,
+                 C_RULE(".kt", "${CACHE_DIR}/${FILENAME}.jar", "cmd", "/C", "kotlinc", "${PATH}",
+                        "-include-runtime", "-d", "${CACHE_DIR}/${FILENAME}.jar"));
     }
 }
 
