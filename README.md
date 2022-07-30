@@ -21,6 +21,7 @@ Things you may need to create:
 
 Advanced view:
 * [Overview of console options](#options)
+* [Runtime error analyzer](#analyzer)
 * [Languages support](#languages-support)
 
 Or take a look at the usage message:
@@ -80,7 +81,8 @@ the program you want to test, logging everything well.
 Once the verdict is not `Accepted` or OK, the input of the test
 is stored into a log file to let you reproduce the problem.
 Internal analyzer also tries to predict the possible crash reason,
-based on some debugging tools.
+based on some debugging tools. See more about analyzer features
+[here](#analyzer).
 
 Let me show you some basics.
 
@@ -578,7 +580,50 @@ Stress-testing is over. Solution is broken
 Check solution_17-46-47.txt
 ```
 
-## Languages support
+# Analyzer
+
+### Preamble
+
+Once in the past, I tried to overcome Windows Error Reporting triggering
+when `Runtime error` happened, because it always led to some freezing
+just before the program completely shut down. While implementing a tiny debugger
+for Windows just to suppress WER I've found that I could gather some info to
+predict the reason of `Runtime error`. So I decided to implement similar
+debugger + analyzer on Linux too.
+
+Analyzer cannot print the wrong line in the source code, but it tries
+to guide you to fix the bug faster. Just below the `Runtime error` verdict
+in a log file you will receive one of these postscripts: 
+
+### Explicit cases
+
+* Null-pointer dereference
+* Write to read-only memory
+* Data execution attempt
+* Signaling floating-point and integer operations, if enabled
+* Division by zero
+* Stack overflow
+
+The last one, stack overflow, is a special case,
+because Linux, instead of Windows, cannot distinguish
+that one from general "segfault: memory not mapped" case.
+
+I implemented that check by myself somehow.
+It may not be 99.99% accurate, but I believe it is good!
+
+### Uncertain cases
+
+* Segmentation fault: memory not mapped
+* Segmentation fault: memory permissions violation
+* And others.
+
+First one means you tried to access memory that doesn't
+belong to your program.
+
+Second one means you tried to access memory by inappropriate
+operation. For example, you tried to write into read-only memory.
+
+# Languages support
 
 This part is about how the stress-tester tries to deal with various files.
 
