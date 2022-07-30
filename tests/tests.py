@@ -152,6 +152,10 @@ def clean(tests):
 tests = load_tests()
 clean(tests)
 
+if "clean" in sys.argv:
+    print("cleaned, shutdown...")
+    exit(0)
+
 editor_func = print_progress(tests)
 success = True
 
