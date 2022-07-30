@@ -324,17 +324,17 @@ Each time generator starts it gets a random unsigned integer in `stdin` to
 provide you a way to init random easily.
 It's recommended to use the number to let you reproduce the test generation chain.
 To manually initialize tester's random generator, use parameter `-seed`.
-Default value is maximum unsigned integer value.
+Default value is zero.
 ```
 stress -g generator -seed 1337 to_test
 ```
 
 ### Test sources: file
 
-Use parameter `-t` to set file with tests. Each next test must be separated
+Use parameter `-f` to set file with tests. Each next test must be separated
 from the previous one by two or more line separators (CR or CRLF).
 ```
-stress -g tests.txt to_test
+stress -f tests.txt to_test
 ```
 There is an example of file with tests:
 ```
@@ -350,6 +350,25 @@ $cat tests.txt
 2
 + 260 oylmk
 + 3304 sq
+```
+
+### Test sources: directory
+
+Use parameter `-d` to set directory with tests. Each file in the directory
+will be interpreted as a file with a test. The order of reading files is
+**unspecified** for now. Maybe it will be lexicographical in the future.
+```
+stress -d tests_dir to_test
+```
+There is an example of directory with tests:
+```
+$ls tests_dir -1
+
+1.txt
+2.txt
+3.txt
+4.txt
+5.txt
 ```
 
 ### Time and memory
