@@ -266,7 +266,7 @@ If verifier can't be started, get runtime error or print the improper result
 (so-called "Verification error"), then the stress shuts down - it
 is a critical error.
 
-## Options
+# Options
 
 ### Basic
 
