@@ -584,7 +584,7 @@ namespace invoker {
                         unit.file = compiledPath;
                         if (child_errno == ENOENT) {
                             terminal::syncOutput("[!] Compiler not found\n");
-                        } else {
+                        } else if (child_errno != 0) {
                             terminal::syncOutput("[!] exec() failed, error ", child_errno, '\n');
                         }
                         return (WEXITSTATUS(status) == 0);
