@@ -543,8 +543,7 @@ namespace invoker {
             }
 
             pid_t pid;
-            std::atomic_int child_errno;
-            child_errno.store(0);
+            volatile int child_errno = 0;
 
             switch (pid = vfork()) {
                 case -1: {
@@ -558,7 +557,7 @@ namespace invoker {
                     execvp(args[0], args.data());
 
                     // couldn't exec: avoid cleaning tasks, just direct exit
-                    child_errno.store(errno);
+                    child_errno = errno;
                     _exit(1);
                 }
 
@@ -583,8 +582,10 @@ namespace invoker {
 
                     if (WIFEXITED(status)) {
                         unit.file = compiledPath;
-                        if (child_errno.load() == ENOENT) {
+                        if (child_errno == ENOENT) {
                             terminal::syncOutput("[!] Compiler not found\n");
+                        } else {
+                            terminal::syncOutput("[!] exec() failed, error ", child_errno, '\n');
                         }
                         return (WEXITSTATUS(status) == 0);
                     }
