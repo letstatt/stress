@@ -64,6 +64,10 @@ public:
 
     static void flush();
 
+    static bool isStdinRedirected() noexcept;
+
+    static bool isStdoutRedirected() noexcept;
+
 private:
     static int getChar() noexcept;
 

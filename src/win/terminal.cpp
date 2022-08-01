@@ -1,6 +1,7 @@
 #include "terminal.h"
 #include <windows.h>
 #include <conio.h>
+#include <io.h>
 #include <csignal>
 
 // terminal_token implementation
@@ -80,4 +81,12 @@ int terminal::getChar() noexcept {
 
 void terminal::safePrint(const char *str, size_t len) noexcept {
     WriteFile(hOut, str, len, nullptr, nullptr);
+}
+
+bool terminal::isStdinRedirected() noexcept {
+    return (_isatty(_fileno(stdin)) == 0);
+}
+
+bool terminal::isStdoutRedirected() noexcept {
+    return (_isatty(_fileno(stdout)) == 0);
 }

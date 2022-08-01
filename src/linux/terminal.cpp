@@ -11,6 +11,8 @@
 namespace {
     std::atomic<std::optional<pthread_t>> blockingThread;
     struct termios oldt;
+    int ttyfd_in = -1;
+    int ttyfd_out = -1;
 
     // signal redirection is needed when master thread
     // caught a signal and should interrupt user input
@@ -30,7 +32,7 @@ void terminal_token::init() {
     struct sigaction sa{};
     memset(&sa, 0, sizeof(struct sigaction));
     sa.sa_handler = &signalRedirection;
-    sa.sa_flags = 0;// not SA_RESTART! todo: why?
+    sa.sa_flags = 0;// not SA_RESTART!
 
     bool ok = true;
 
@@ -54,23 +56,28 @@ void terminal_token::init() {
         throw std::runtime_error("[!] Unable to set signal handler");
     }
 
-    // we assume that compilers are not interactive
-    if (tcgetattr(STDIN_FILENO, &oldt) == -1) {
-        throw std::runtime_error("[!] Unable to get terminal attributes");
+    if (isatty(fileno(stdin))) {
+        ttyfd_in = fileno(stdin);
+
+        // we assume that compilers are not interactive
+        if (!tcgetattr(ttyfd_in, &oldt)) {
+            struct termios newt = oldt;
+            newt.c_lflag &= ~(ICANON | ECHO);
+            newt.c_cc[VTIME] = 0;
+            newt.c_cc[VMIN] = 1;
+            tcsetattr(ttyfd_in, TCSANOW, &newt);
+        }
     }
 
-    struct termios newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO);
-    newt.c_cc[VTIME] = 0;
-    newt.c_cc[VMIN] = 1;
-
-    if (tcsetattr(STDIN_FILENO, TCSANOW, &newt) == -1) {
-        throw std::runtime_error("[!] Unable to set terminal attributes");
+    if (isatty(fileno(stdout))) {
+        ttyfd_out = fileno(stdout);
     }
 }
 
 terminal_token::~terminal_token() {
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    if (ttyfd_in != -1) {
+        tcsetattr(ttyfd_in, TCSANOW, &oldt);
+    }
 }
 
 // terminal implementation
@@ -87,4 +94,12 @@ int terminal::getChar() noexcept {
 
 void terminal::safePrint(const char *str, size_t len) noexcept {
     write(STDOUT_FILENO, str, len);
+}
+
+bool terminal::isStdinRedirected() noexcept {
+    return (ttyfd_in == -1);
+}
+
+bool terminal::isStdoutRedirected() noexcept {
+    return (ttyfd_out == -1);
 }

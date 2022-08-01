@@ -41,8 +41,10 @@ void terminal_utils::interruptionHandler(int sig) noexcept {
 // terminal implementation
 
 void terminal::clear() noexcept {
-    // ESC[2J ESC[H - clear screen and move cursor to (0, 0)
-    syncOutput("\x1B[2J\x1B[H");
+    if (!isStdoutRedirected()) {
+        // ESC[2J ESC[H - clear screen and move cursor to (0, 0)
+        syncOutput("\x1B[2J\x1B[H");
+    }
 }
 
 void terminal::writeTestResult(runtime_config const &cfg, test_result &result, uint32_t testId) {

@@ -1,4 +1,5 @@
 #include "parsing/args.h"
+#include "terminal.h"
 #include <cstring>
 
 runtime_config args::parseArgs(int argc, char *argv[]) {
@@ -200,6 +201,9 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
     } else if (!cfg.prime.empty() && !cfg.verifier.empty()) {
         throw std::runtime_error(
                 "[!] Prime solution and verifier can only be set separately");
+    } else if ((cfg.pausing || cfg.collapseVerdicts) && terminal::isStdoutRedirected()) {
+        throw std::runtime_error(
+                "[!] Flags -p and -cv cannot be set if stdout redirected");
     }
 
     // constraints check
