@@ -65,8 +65,7 @@ namespace invoker {
                  S_RULE_U("${DIRNAME}", u.file.parent_path().filename().string()),
                  S_RULE("${CACHE_DIR}", "${STRESS_DIR}/cache/"),
                  S_RULE("${LOGS_DIR}", "${STRESS_DIR}/logs/"),
-                 S_RULE("${STRESS_DIR}", "${CWD}/stress/"),
-                 S_RULE_CFG("${CWD}", cfg.workingDirectory.string()),
+                 S_RULE("${STRESS_DIR}", "stress/"),
                  S_RULE("${EXEC_EXT}", invoker::EXEC_EXT),
                  S_RULE("${SHELL_EXT}", invoker::SHELL_EXT));
 
