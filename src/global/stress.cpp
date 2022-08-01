@@ -24,13 +24,6 @@ void worker(runtime_config &, session &);
 void stress::start(int argc, char *argv[]) {
     runtime_config cfg = args::parseArgs(argc, argv);
 
-    // todo: is it needed?
-    try {
-        cfg.workingDirectory = fs::current_path();
-    } catch (...) {
-        throw std::runtime_error("[!] Unable to get current working directory");
-    }
-
     // ctor throws exception
     logger l(cfg);
 
@@ -64,8 +57,8 @@ void stress::start(int argc, char *argv[]) {
 }
 
 void stress::usage() {
-    const static std::string ABOUT = "stress v1.0 by letstatt";
-    const static std::string SYNTAX = "Syntax:\nstress tests [options] to_test [prime]";
+    constexpr auto ABOUT = "stress v%s by letstatt (build %s)";
+    constexpr auto SYNTAX = "Syntax:\nstress tests [options] to_test [prime]";
 
     const static std::pair<std::string, std::string> OPTIONS[] = {
             {"General:",   ""},
@@ -99,8 +92,11 @@ void stress::usage() {
             {"-cv",        "Collapse identical verdicts\n"}
     };
 
-    std::cout << std::endl << ABOUT << std::endl;
-    std::cout << std::endl << SYNTAX << std::endl << std::endl;
+    std::cout << std::endl;
+    printf(ABOUT, build_info::version, build_info::build_number);
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << SYNTAX << std::endl << std::endl;
 
     size_t maxLength = 0;
 

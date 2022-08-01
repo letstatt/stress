@@ -32,7 +32,7 @@ logger::logger(runtime_config & cfg) {
             ? cfg.toTest.filename() : cfg.tag;
 
     filename += '_' + std::string(buf, written) + ".txt";
-    auto stressDir = cfg.workingDirectory / "stress";
+    std::filesystem::path stressDir = "stress";
     auto logsDir = stressDir / "logs";
     path = logsDir / filename;
 

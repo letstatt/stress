@@ -335,7 +335,7 @@ namespace invoker {
             }
             std::string cmdline = stream.str();
 
-            path stressFolder = cfg.workingDirectory / "stress";
+            path stressFolder = "stress";
             path cacheFolder = stressFolder / "cache";
 
             if (exists(compiledPath) && cfg.useCached.count(unit.cat)) {

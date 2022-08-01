@@ -48,7 +48,6 @@ struct verifier_config {
 struct runtime_config : limits, generator_config, invoker_config, terminal_config, logger_config, verifier_config {
     using path = std::filesystem::path;
 
-    path workingDirectory;
     bool ignorePRE = false;
 
     units::proto_unit generator;

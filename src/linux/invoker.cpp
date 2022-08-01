@@ -8,6 +8,7 @@
 #include "core/runtime_config.h"
 #include "linux/core/error_info.h"
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include <unistd.h>
 #include <thread>
 #include <sys/ptrace.h>
@@ -124,8 +125,8 @@ namespace {
                                 "[!] Syscall waitpid failed at warm-up, error ", errno, '\n');
                     }
                     // if waitpid failed or interrupted, kill process
-                    kill(pid, SIGKILL);
-                    while (waitpid(pid, &status, 0), errno != ECHILD); // todo: dirty?
+                    kill(pid, SIGKILL); // kill entire process
+                    while (waitpid(pid, &status, 0), !errno);
                     return false;
                 }
             }
@@ -164,13 +165,16 @@ namespace {
         }
     }
 
-    bool debugger(execution_result &result, units::unit const &unit, pid_t pid) {
+    bool debugger(execution_result &result, units::unit const &unit, pid_t pid, void* pg_ptr) {
         if (!warmup(pid)) {
             return false;
         }
 
         // MONITORING
         // declare some stuff and do debugger work
+
+        // get process group id
+        const pid_t pg = * (volatile pid_t*) pg_ptr;
 
         // to distinguish stack overflow and general access violation
         // we need to associate each thread with its stack area.
@@ -208,6 +212,9 @@ namespace {
         ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_EXITKILL | PTRACE_O_TRACECLONE);
 
         // todo: what about exec?
+        // it's possible to detach debugger from the threads (or processes - they are equal),
+        // which call exec, because since the call the threads are not the only interesting program.
+        // except main thread (?)
 
         // start
         ptrace(PTRACE_CONT, pid, 0, 0);
@@ -226,7 +233,7 @@ namespace {
             pid_t child;
 
             // wait4 is not standardized on Linux
-            while ((child = wait4(-1, &status, WNOHANG, &rusage)) == 0) {
+            while ((child = wait4(-pg, &status, WNOHANG, &rusage)) == 0) {
                 elapsed = duration_cast<milliseconds>(steady_clock::now() - start).count();
 
                 if (terminal::interrupted()
@@ -248,7 +255,9 @@ namespace {
             } else if (errno == ECHILD) {
                 // process has been terminated, break
                 // it should never enter this branch btw.
-                break;
+                terminal::syncOutput("[!] Traced process unexpectedly disappeared");
+                return false;
+                //break;
             } else if (WIFSTOPPED(status)) {
                 // tracee was stopped, let's check a signal.
                 // WIFSTOPPED != 0, so it isn't SIGKILL, so process is alive.
@@ -421,11 +430,18 @@ namespace invoker {
         }
 
         pid_t pid;
+        void* pg = mmap(nullptr, sizeof(pid_t), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+
+        if (pg == MAP_FAILED) {
+            throw std::runtime_error("[!] mmap() failed, error " + std::to_string(errno));
+        }
 
         switch (pid = fork()) {
             case -1: {
                 terminal::syncOutput(
                         "[!] Can't create a process, error ", errno, '\n');
+                // doesn't matter if munmap failed -> critical error has already happened
+                munmap(pg, sizeof(pid_t));
                 return false;
             }
 
@@ -447,9 +463,12 @@ namespace invoker {
                 close(STDOUT_PIPE[1].release());
                 close(STDIN_PIPE[0].release());
 
-                execvp(args[0], args.data());
+                if (setpgid(0, 0) == 0) {
+                    * (volatile pid_t*) pg = getpgid(0);
+                    execvp(args[0], args.data());
+                }
 
-                // couldn't exec: avoid cleaning tasks, just direct exit
+                // couldn't setpgid and exec: avoid cleaning tasks, just direct exit
                 _exit(errno);
             }
 
@@ -463,11 +482,16 @@ namespace invoker {
                 std::thread readerInstance(reader, std::move(STDOUT_PIPE[0]), std::ref(out));
                 std::thread errReaderInstance(reader, std::move(STDERR_PIPE[0]), std::ref(err));
 
-                bool ret = debugger(result, unit, pid);
-
+                bool ret = debugger(result, unit, pid, pg);
                 writerInstance.join();
                 readerInstance.join();
                 errReaderInstance.join();
+
+                if (munmap(pg, sizeof(pid_t))) {
+                    terminal::syncOutput(
+                            "[!] munmap() failed, possible memory leak. error ", errno, '\n');
+                    // don't throw exception. give a chance not to be done by oom-killer
+                }
 
                 return ret;
             }
@@ -488,10 +512,8 @@ namespace invoker {
                 args[i] = const_cast<char *>(cmd[i].data());
             }
 
-            path stressFolder = cfg.workingDirectory / "stress";
+            path stressFolder = "stress";
             path cacheFolder = stressFolder / "cache";
-
-            using namespace std::filesystem; // todo: why adl failed?
 
             // todo: remove copypaste
             if (exists(compiledPath) && cfg.useCached.count(unit.cat)) {
@@ -521,8 +543,10 @@ namespace invoker {
             }
 
             pid_t pid;
+            std::atomic_int child_errno;
+            child_errno.store(0);
 
-            switch (pid = fork()) {
+            switch (pid = vfork()) {
                 case -1: {
                     terminal::syncOutput(
                             "[!] Can't create a process, error ", errno, '\n');
@@ -534,7 +558,8 @@ namespace invoker {
                     execvp(args[0], args.data());
 
                     // couldn't exec: avoid cleaning tasks, just direct exit
-                    _exit(errno);
+                    child_errno.store(errno);
+                    _exit(1);
                 }
 
                 default: {
@@ -550,15 +575,15 @@ namespace invoker {
                                 terminal::syncOutput(
                                         "[!] Syscall waitpid failed, error ", errno, '\n');
                             }
-                            kill(pid, SIGKILL);
-                            while (waitpid(pid, &status, 0), errno != ECHILD); // todo: dirty?
+                            kill(pid, SIGKILL); // kill entire process
+                            while (waitpid(pid, &status, 0), !errno);
                             return false;
                         }
                     }
 
                     if (WIFEXITED(status)) {
                         unit.file = compiledPath;
-                        if (WEXITSTATUS(status) == ENOENT) { // todo: dirty
+                        if (child_errno.load() == ENOENT) {
                             terminal::syncOutput("[!] Compiler not found\n");
                         }
                         return (WEXITSTATUS(status) == 0);

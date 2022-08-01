@@ -50,8 +50,29 @@ else()
     set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic -pthread")
 endif()
 
+# generate build_number
+add_custom_target(
+        generate_build_number
+        COMMAND ${CMAKE_COMMAND}
+        -D "BUILD_NUMBER_FILE=${CMAKE_CURRENT_SOURCE_DIR}/routines/version/build_number"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/routines/version/update-build-number.cmake"
+        BYPRODUCTS "${CMAKE_CURRENT_SOURCE_DIR}/routines/version/build_number"
+        )
+
+# generate header from build_number
+add_custom_command(
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/src/global/version.cpp"
+        COMMAND ${CMAKE_COMMAND}
+        -D "BUILD_NUMBER_FILE=${CMAKE_CURRENT_SOURCE_DIR}/routines/version/build_number"
+        -D "IN_FILE=${CMAKE_CURRENT_SOURCE_DIR}/routines/version/version.cpp.in"
+        -D "CPP_FILE=${CMAKE_CURRENT_BINARY_DIR}/src/global/version.cpp"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/routines/version/generate-version-header.cmake"
+        DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/routines/version/build_number"
+)
+
 # build
-add_executable(stress ${sources})
+add_executable(stress ${sources} src/global/version.cpp)
+add_dependencies(stress generate_build_number)
 
 if (!MSVC)
     target_compile_options(stress PRIVATE -Wall -Wextra -Wpedantic -Werror)
