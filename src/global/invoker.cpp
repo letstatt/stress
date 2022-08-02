@@ -76,9 +76,9 @@ namespace invoker {
                  E_RULE(".jar", "-jar", "${PATH}"));
 
         addRules(compiler,
-                 C_RULE(".c", "${COMPILED_PATH}", "gcc", "-std=c11", "-pthread",
+                 C_RULE(".c", "${COMPILED_PATH}", "gcc", "-std=c11",
                         "-static", "-w", "-o", "${COMPILED_PATH}", "${PATH}"),
-                 C_RULE(".cpp", "${COMPILED_PATH}", "c++", "-std=c++17", "-pthread", // todo: is -pthread required?
+                 C_RULE(".cpp", "${COMPILED_PATH}", "c++", "-std=c++17",
                         "-static", "-w", "-o", "${COMPILED_PATH}", "${PATH}"),
                  C_RULE(".rs", "${COMPILED_PATH}", "rustc", "-o",
                         "${COMPILED_PATH}", "--crate-name", "test", "${PATH}"),
