@@ -34,3 +34,7 @@
 # CLion
 cmake-*
 .idea
+
+# VS Code
+.vscode
+build
