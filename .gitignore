@@ -38,3 +38,6 @@ cmake-*
 # VS Code
 .vscode
 build
+
+# Python cache
+__pycache__
