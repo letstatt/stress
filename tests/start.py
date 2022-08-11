@@ -7,6 +7,9 @@ from utils.tests_loader import Section, Test, TestProgress, load_tests
 from utils.console import print_progress
 
 
+ENV_SEPARATOR = ';' if sys.platform == "win32" else ':'
+
+
 def run_test(test: Test):
     test.status = TestProgress.TESTING
     stderr = ""
@@ -17,7 +20,7 @@ def run_test(test: Test):
                           stdin=subprocess.PIPE,
                           stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE,
-                          env={**os.environ, 'PYTHONPATH': ';'.join(sys.path)}) as p:
+                          env={**os.environ, 'PYTHONPATH': ENV_SEPARATOR.join(sys.path)}) as p:
         p.stdin.close()
         p.stdout.close()
         for line in iter(p.stderr.readline, ''):
@@ -84,6 +87,8 @@ for section in tests:
 
 if success:
     clean()
+
+exit(0 if success else 1)
 
 # Tests:
 # init             [**_____]

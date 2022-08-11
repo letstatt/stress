@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: CI
 
 on:
   push:
@@ -14,14 +14,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: run cmake
-      run: cmake .
-    - name: run make
-      run: make
-    - name: make distcheck
-      run: make distcheck
+      run: export CC=/usr/bin/clang && export CXX=/usr/bin/clang++ && cmake . && cmake --build . -j 6
     - name: copy to /usr/bin
-      run: cp ./stress /usr/bin/stress
+      run: sudo cp ./stress /usr/bin/stress
     - name: set exec permission
-      run: chmod +x /usr/bin/stress
+      run: sudo chmod +x /usr/bin/stress
     - name: run tests
-      run: cd tests & python3 tests.py
+      run: cd tests && python3 start.py
