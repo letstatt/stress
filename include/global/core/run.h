@@ -101,7 +101,7 @@ struct execution_result {
 struct test_result {
     decltype(session::rand.operator()()) seed;
     execution_result execResult;
-    verdict verdict;
+    class verdict verdict;
     std::string input;
     std::string output;
     std::string output2;

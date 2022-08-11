@@ -17,7 +17,7 @@ struct session {
     uint32_t testsDone = 0;
 
     runtime_config const &cfg;
-    logger &logger;
+    class logger &logger;
     std::mt19937 rand;
     std::mutex mutex;
 
