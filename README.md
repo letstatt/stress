@@ -133,7 +133,7 @@ or define it using the option.
 $stress -g gen.py -n 3 my_solution.py
 
 Test 1, OK
-Test 2, Wrong asnwer
+Test 2, Wrong answer
 Test 3, Runtime error
 
 Stress-testing is over. Solution is broken
