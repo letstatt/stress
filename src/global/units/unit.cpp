@@ -14,7 +14,7 @@ namespace units {
 
     std::string proto_unit::category() const {
         switch (cat) {
-            case unit_category::GENERATOR:
+            case unit_category::TESTS_SOURCE:
                 return "source of tests";
             case unit_category::TO_TEST:
                 return "solution to test";

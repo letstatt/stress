@@ -4,6 +4,8 @@
 #include <filesystem>
 #include <iomanip>
 
+#define _CRT_SECURE_NO_WARNINGS 1
+
 // logger implementation
 
 logger::logger(runtime_config & cfg) {

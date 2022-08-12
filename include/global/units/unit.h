@@ -10,7 +10,7 @@ struct test_result;
 namespace units {
 
     enum class unit_category {
-        GENERATOR = 0,
+        TESTS_SOURCE = 0,
         TO_TEST = 1,
         PRIME = 2,
         VERIFIER = 3,
@@ -25,7 +25,7 @@ namespace units {
         void requireExistence() const;
 
         // return unit category string representation
-        std::string category() const;
+        virtual std::string category() const;
 
         // return category + path
         std::string toString() const;

@@ -110,11 +110,11 @@ void stress::usage() {
 
 void build_units(runtime_config &cfg) {
     cfg.units.emplace(
-            units::unit_category::GENERATOR,
+            units::unit_category::TESTS_SOURCE,
             std::dynamic_pointer_cast<units::unit>(
-                    std::make_shared<units::generator>(
-                            cfg.testsSource,
-                            cfg.generator)));
+                    std::make_shared<units::tests_source>(
+                            cfg.testsSourceType,
+                            cfg.testsSource)));
     cfg.units.emplace(
             units::unit_category::TO_TEST,
             std::dynamic_pointer_cast<units::unit>(
@@ -185,13 +185,10 @@ void worker(runtime_config &cfg, session &session) {
     using cat = units::unit_category;
 
     test_result result;
-    std::shared_ptr<units::generator> generator =
-            std::dynamic_pointer_cast<units::generator>(
-                    cfg.units[cat::GENERATOR]);
 
     // make run sequence
     std::vector<std::shared_ptr<units::unit>> u;
-    u.emplace_back(cfg.units[cat::GENERATOR]);
+    u.emplace_back(cfg.units[cat::TESTS_SOURCE]);
     u.emplace_back(cfg.units[cat::TO_TEST]);
 
     if (!cfg.prime.empty()) {

@@ -17,7 +17,7 @@ LIST(APPEND sources
         "src/global/core/session.cpp"
         "src/global/parsing/args.cpp"
         "src/global/units/unit.cpp"
-        "src/global/units/generator.cpp"
+        "src/global/units/tests_source.cpp"
         "src/global/units/to_test.cpp"
         "src/global/units/prime.cpp"
         "src/global/units/verifier.cpp")

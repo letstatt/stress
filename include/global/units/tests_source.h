@@ -1,7 +1,7 @@
 #pragma once
 
 #include "unit.h"
-#include "core/tests_source.h"
+#include "core/tests_source_type.h"
 #include <fstream>
 #include <mutex>
 
@@ -11,8 +11,8 @@ struct test_result;
 namespace units {
 
 // TODO: tag-dispatching (?)
-    class generator : public unit {
-        tests_source cat;
+    class tests_source : public unit {
+        tests_source_type type;
         std::ifstream reader;
         std::filesystem::directory_iterator iter;
         std::filesystem::directory_iterator iter_end{};
@@ -21,9 +21,11 @@ namespace units {
         bool readNextTestFromFile(std::string &);
         bool readNextTestFromDir(std::string &);
 
+        std::string category() const override;
+
     public:
 
-        generator(tests_source testsSource, proto_unit const &u);
+        tests_source(tests_source_type testsSource, proto_unit const &u);
 
         bool prepare(runtime_config &cfg) override;
 

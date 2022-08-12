@@ -1,6 +1,6 @@
 #include "parsing/args.h"
 #include "terminal.h"
-#include "error.h"
+#include "core/error.h"
 #include <cstring>
 
 runtime_config args::parseArgs(int argc, char *argv[]) {
@@ -39,7 +39,7 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
         }
         const std::string tokens = argv[i + 1];
         const static std::unordered_map<char, cat> m = {
-                {'g', cat::GENERATOR},
+                {'g', cat::TESTS_SOURCE},
                 {'v', cat::VERIFIER},
                 {'t', cat::TO_TEST},
                 {'p', cat::PRIME}
@@ -74,42 +74,42 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
             parseUnsigned(i++, cfg.primeMemoryLimit);
         }
 
-        // generator_config
+        // tests_config
         else if (!strcmp(argv[i], "-g")) {
-            switch (cfg.testsSource) {
-                case tests_source::EXECUTABLE:
+            switch (cfg.testsSourceType) {
+                case tests_source_type::EXECUTABLE:
                     [[fallthrough]];
-                case tests_source::UNSPECIFIED:
+                case tests_source_type::UNSPECIFIED:
                     break;
                 default:
                     throw error("Use only one source of tests");
             }
-            parsePath(i++, cfg.generator.file);
-            cfg.testsSource = tests_source::EXECUTABLE;
+            parsePath(i++, cfg.testsSource.file);
+            cfg.testsSourceType = tests_source_type::EXECUTABLE;
 
         } else if (!strcmp(argv[i], "-f")) {
-            switch (cfg.testsSource) {
-                case tests_source::FILE:
+            switch (cfg.testsSourceType) {
+                case tests_source_type::FILE:
                     [[fallthrough]];
-                case tests_source::UNSPECIFIED:
+                case tests_source_type::UNSPECIFIED:
                     break;
                 default:
                     throw error("Use only one source of tests");
             }
-            parsePath(i++, cfg.generator.file);
-            cfg.testsSource = tests_source::FILE;
+            parsePath(i++, cfg.testsSource.file);
+            cfg.testsSourceType = tests_source_type::FILE;
 
         } else if (!strcmp(argv[i], "-d")) {
-            switch (cfg.testsSource) {
-                case tests_source::DIR:
+            switch (cfg.testsSourceType) {
+                case tests_source_type::DIR:
                     [[fallthrough]];
-                case tests_source::UNSPECIFIED:
+                case tests_source_type::UNSPECIFIED:
                     break;
                 default:
                     throw error("Use only one source of tests");
             }
-            parsePath(i++, cfg.generator.file);
-            cfg.testsSource = tests_source::DIR;
+            parsePath(i++, cfg.testsSource.file);
+            cfg.testsSourceType = tests_source_type::DIR;
 
         } else if (!strcmp(argv[i], "-s")) {
             parseUnsigned(i++, cfg.initialSeed);
@@ -184,7 +184,7 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
     }
 
     // checks
-    if (cfg.generator.empty()) {
+    if (cfg.testsSource.empty()) {
         throw error("Source of tests was not set");
 
     } else if (cfg.toTest.empty()) {

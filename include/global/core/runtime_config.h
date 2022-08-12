@@ -3,7 +3,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include "units/unit.h"
-#include "tests_source.h"
+#include "tests_source_type.h"
 
 namespace constraints {
     constexpr uint32_t MIN_TIME_LIMIT_MS = 10;
@@ -17,13 +17,13 @@ struct limits {
     uint32_t primeMemoryLimit = 0; // bytes
 };
 
-struct generator_config {
+struct tests_config {
     uint32_t initialSeed = 0;
-    tests_source testsSource = tests_source::UNSPECIFIED;
+    uint32_t testsCount = 10;
+    tests_source_type testsSourceType = tests_source_type::UNSPECIFIED;
 };
 
 struct invoker_config {
-    uint32_t testsCount = 10;
     uint32_t workersCount = 0;
     std::unordered_set<units::unit_category> useCached;
     bool multithreading = false;
@@ -33,11 +33,11 @@ struct terminal_config {
     bool collapseVerdicts = false;
     bool pausing = false;
     bool displayStats = false;
-    bool doNotLog = false;
 };
 
 struct logger_config {
     bool logStderrOnRE = false;
+    bool doNotLog = false;
     std::string tag;
 };
 
@@ -45,12 +45,12 @@ struct verifier_config {
     bool strictVerifier = false;
 };
 
-struct runtime_config : limits, generator_config, invoker_config, terminal_config, logger_config, verifier_config {
+struct runtime_config : limits, tests_config, invoker_config, terminal_config, logger_config, verifier_config {
     using path = std::filesystem::path;
 
     bool ignorePRE = false;
 
-    units::proto_unit generator;
+    units::proto_unit testsSource;
     units::proto_unit toTest;
     units::proto_unit prime;
     units::proto_unit verifier;
@@ -60,7 +60,7 @@ struct runtime_config : limits, generator_config, invoker_config, terminal_confi
             std::shared_ptr<units::unit>> units;
 
     runtime_config() :
-            generator(units::unit_category::GENERATOR),
+            testsSource(units::unit_category::TESTS_SOURCE),
             toTest(units::unit_category::TO_TEST),
             prime(units::unit_category::PRIME),
             verifier(units::unit_category::VERIFIER) {}
