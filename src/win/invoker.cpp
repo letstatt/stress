@@ -379,7 +379,7 @@ namespace invoker {
             CloseHandle(pi.hThread);
 
             if (exitCode == 0) {
-                unit.file = compiledPath;
+                unit.file = std::move(compiledPath);
                 return true;
 
             } else {

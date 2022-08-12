@@ -5,6 +5,7 @@
 #undef INVOKER_MACROS
 
 #include "core/runtime_config.h"
+#include "core/error.h"
 
 namespace {
     constexpr uint32_t MAX_SUBSTITUTION_NESTING = 5;
@@ -113,7 +114,7 @@ namespace invoker {
                 ++nesting;
 
                 if (nesting > MAX_SUBSTITUTION_NESTING) {
-                    throw std::runtime_error("[!] Maximal substitution nesting reached");
+                    throw error("Maximal substitution nesting reached");
                 }
 
                 for (auto &j: substitutions) {

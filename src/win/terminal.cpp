@@ -1,4 +1,5 @@
 #include "terminal.h"
+#include "core/error.h"
 #include <windows.h>
 #include <conio.h>
 #include <io.h>
@@ -29,35 +30,35 @@ void terminal_token::init() {
 
     // Add another once ctrl+c handler
     if (!SetConsoleCtrlHandler(ctrlHandler, TRUE)) {
-        throw std::runtime_error("[!] Unable to set ctrl handler");
+        throw error("Unable to set ctrl handler");
     }
 
     // Enable virtual terminal processing
     if ((hOut = CreateFile(
             "CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE,
             nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr)) == INVALID_HANDLE_VALUE) {
-        throw std::runtime_error("[!] Unable to get console output handle, error " + std::to_string(GetLastError()));
+        throw error("Unable to get console output handle, error " + std::to_string(GetLastError()));
 
     } else if (!GetConsoleMode(hOut, &oldConsoleOutMode)) {
-        throw std::runtime_error("[!] Unable to get console mode, error " + std::to_string(GetLastError()));
+        throw error("Unable to get console mode, error " + std::to_string(GetLastError()));
 
     } else if (!SetConsoleMode(
             hOut, oldConsoleOutMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING)) {
-        throw std::runtime_error("[!] Unable to set console mode, error " + std::to_string(GetLastError()));
+        throw error("Unable to set console mode, error " + std::to_string(GetLastError()));
     }
 
     // Get console input buffer and disable echo
     if ((hIn = CreateFile(
             "CONIN$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,
             nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr)) == INVALID_HANDLE_VALUE) {
-        throw std::runtime_error("[!] Unable to get console input handle, error " + std::to_string(GetLastError()));
+        throw error("Unable to get console input handle, error " + std::to_string(GetLastError()));
 
     } else if (!GetConsoleMode(hIn, &oldConsoleInMode)) {
-        throw std::runtime_error("[!] Unable to get console input mode, error " + std::to_string(GetLastError()));
+        throw error("Unable to get console input mode, error " + std::to_string(GetLastError()));
 
     } else if (!SetConsoleMode(
             hIn, oldConsoleInMode & ~ENABLE_LINE_INPUT & ~ENABLE_ECHO_INPUT & ~ENABLE_PROCESSED_INPUT)) {
-        throw std::runtime_error("[!] Unable to set console input mode, error " + std::to_string(GetLastError()));
+        throw error("Unable to set console input mode, error " + std::to_string(GetLastError()));
     }
 }
 

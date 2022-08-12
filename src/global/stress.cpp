@@ -3,6 +3,7 @@
 #include "logger.h"
 #include "terminal.h"
 #include "core/run.h"
+#include "core/error.h"
 #include "units/to_test.h"
 #include "units/prime.h"
 #include "units/verifier.h"
@@ -40,12 +41,9 @@ void stress::start(int argc, char *argv[]) {
     for (const auto &[cat, unit]: cfg.units) {
         if (unit->empty()) continue;
 
-        // is it needed?
-        //unit->file = fs::canonical(unit->file);
-
         if (!unit->prepare(cfg)) {
             if (!terminal::interrupted()) {
-                throw std::runtime_error("[!] Unable to prepare " + unit->category());
+                throw error("Unable to prepare " + unit->category());
             } else {
                 terminal::syncOutput("Stress-testing interrupted\n");
                 return;

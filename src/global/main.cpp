@@ -1,5 +1,6 @@
 #include "stress.h"
 #include "terminal.h"
+#include "core/error.h"
 #include <optional>
 
 namespace {
@@ -21,9 +22,13 @@ int main(int argc, char* argv[]) {
         t_opt.emplace();
         stress::start(argc, argv);
 
-    } catch (std::runtime_error const& e) {
-        std::cout << e.what() << std::endl;
+    } catch (error const& e) {
+        std::cout << e.message() << std::endl;
         return 1;
+
+    } catch (std::exception const& e) {
+        std::cout << e.what() << std::endl << std::endl;
+        std::terminate();
     }
 
     return 0;

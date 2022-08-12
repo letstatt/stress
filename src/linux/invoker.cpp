@@ -6,6 +6,7 @@
 
 #include "terminal.h"
 #include "core/runtime_config.h"
+#include "core/error.h"
 #include "linux/core/error_info.h"
 #include <sys/wait.h>
 #include <sys/mman.h>
@@ -433,7 +434,7 @@ namespace invoker {
         void* pg = mmap(nullptr, sizeof(pid_t), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
         if (pg == MAP_FAILED) {
-            throw std::runtime_error("[!] mmap() failed, error " + std::to_string(errno));
+            throw error("mmap() failed, error " + std::to_string(errno));
         }
 
         switch (pid = fork()) {

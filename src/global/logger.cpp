@@ -1,5 +1,6 @@
 #include "logger.h"
 #include "core/run.h"
+#include "core/error.h"
 #include <filesystem>
 #include <iomanip>
 
@@ -39,13 +40,13 @@ logger::logger(runtime_config & cfg) {
     std::error_code errCode;
 
     if (exists(stressDir) && !is_directory(stressDir, errCode)) {
-        throw std::runtime_error("[!] Path ./stress exists, but it is not a folder");
+        throw error("Path ./stress exists, but it is not a folder");
 
     } else if (!exists(stressDir) && !create_directory(stressDir, errCode)) {
-        throw std::runtime_error("[!] Path ./stress couldn't be created");
+        throw error("Path ./stress couldn't be created");
 
     } else if (!exists(logsDir) && !create_directory(logsDir, errCode)) {
-        throw std::runtime_error("[!] Path ./stress/logs couldn't be created");
+        throw error("Path ./stress/logs couldn't be created");
     }
 }
 

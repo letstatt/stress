@@ -1,4 +1,5 @@
 #include "terminal.h"
+#include "core/error.h"
 #include <termios.h>
 #include <pthread.h>
 #include <optional>
@@ -53,7 +54,7 @@ void terminal_token::init() {
     signal(SIGPIPE, SIG_IGN); // prevents crash while writing to pipe without readers
 
     if (!ok) {
-        throw std::runtime_error("[!] Unable to set signal handler");
+        throw error("Unable to set signal handler");
     }
 
     if (isatty(fileno(stdin))) {

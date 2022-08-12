@@ -1,4 +1,5 @@
 #include "units/unit.h"
+#include "core/error.h"
 #include "invoker.h"
 
 namespace units {
@@ -7,7 +8,7 @@ namespace units {
 
     void proto_unit::requireExistence() const {
         if (!std::filesystem::is_regular_file(file)) {
-            throw std::runtime_error("[!] " + toString() + " is not a regular file");
+            throw error(toString() + " is not a regular file");
         }
     }
 
@@ -22,7 +23,7 @@ namespace units {
             case unit_category::VERIFIER:
                 return "verifier";
             default:
-                throw std::runtime_error("[!] Unknown category");
+                throw error("Unknown category");
         }
     }
 
@@ -43,7 +44,7 @@ namespace units {
     bool unit::prepare(runtime_config &cfg) {
         if (!invoker::isExecutable(file)) {
             if (!invoker::isCompilable(file)) {
-                throw std::runtime_error("[!] Don't know how to process " + toString());
+                throw error("Don't know how to process " + toString());
             }
 
             if (!invoker::compile(cfg, *this)) {
@@ -53,7 +54,7 @@ namespace units {
             // compilation done there
 
             if (!invoker::isExecutable(file)) {
-                throw std::runtime_error("[!] Don't know how to process " + toString());
+                throw error("Don't know how to process " + toString());
             }
         }
         requireExistence();

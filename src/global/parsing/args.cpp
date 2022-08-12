@@ -1,5 +1,6 @@
 #include "parsing/args.h"
 #include "terminal.h"
+#include "error.h"
 #include <cstring>
 
 runtime_config args::parseArgs(int argc, char *argv[]) {
@@ -9,34 +10,32 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
 
     auto parseUnsigned = [&](int i, auto &result) {
         if (i == argc - 1) {
-            throw std::runtime_error("[!] Expected an unsigned integer");
+            throw error("Expected an unsigned integer");
         }
         try {
             result = std::stoi(argv[i + 1]);
         } catch (...) {
-            throw std::runtime_error("[!] Expected an unsigned integer");
+            throw error("Expected an unsigned integer");
         }
     };
 
     auto parsePath = [&](int i, fs::path &result) {
         if (i == argc - 1) {
-            throw std::runtime_error("[!] Expected a path");
+            throw error("Expected a path");
         }
         try {
             result = argv[i + 1];
         } catch (...) {
-            throw std::runtime_error("[!] Expected a path");
+            throw error("Expected a path");
         }
         if (!exists(result)) {
-            throw std::runtime_error(
-                    "[!] " + result.filename().string() + " doesn't exist");
+            throw error(result.filename().string() + " doesn't exist");
         }
     };
 
     auto parseUnitCategory = [&](int i, std::unordered_set<cat> &s) {
         if (i == argc - 1) {
-            throw std::runtime_error(
-                    "[!] Expected a unit categories string");
+            throw error("Expected a unit categories string");
         }
         const std::string tokens = argv[i + 1];
         const static std::unordered_map<char, cat> m = {
@@ -50,13 +49,11 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
             if (it != m.end()) {
                 cat c = it->second;
                 if (s.count(c)) {
-                    throw std::runtime_error(
-                            "[!] Invalid unit categories string");
+                    throw error("Invalid unit categories string");
                 }
                 s.insert(c);
             } else {
-                throw std::runtime_error(
-                        "[!] Expected a valid unit category");
+                throw error("Expected a valid unit category");
             }
         }
     };
@@ -85,7 +82,7 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
                 case tests_source::UNSPECIFIED:
                     break;
                 default:
-                    throw std::runtime_error("[!] Use only one source of tests");
+                    throw error("Use only one source of tests");
             }
             parsePath(i++, cfg.generator.file);
             cfg.testsSource = tests_source::EXECUTABLE;
@@ -97,7 +94,7 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
                 case tests_source::UNSPECIFIED:
                     break;
                 default:
-                    throw std::runtime_error("[!] Use only one source of tests");
+                    throw error("Use only one source of tests");
             }
             parsePath(i++, cfg.generator.file);
             cfg.testsSource = tests_source::FILE;
@@ -109,7 +106,7 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
                 case tests_source::UNSPECIFIED:
                     break;
                 default:
-                    throw std::runtime_error("[!] Use only one source of tests");
+                    throw error("Use only one source of tests");
             }
             parsePath(i++, cfg.generator.file);
             cfg.testsSource = tests_source::DIR;
@@ -125,8 +122,7 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
         } else if (!strcmp(argv[i], "-w")) {
             parseUnsigned(i++, cfg.workersCount);
             if (cfg.workersCount < 1) {
-                throw std::runtime_error(
-                        "[!] Count of workers must be a positive number");
+                throw error("Count of workers must be a positive number");
             }
 
         } else if (!strcmp(argv[i], "-c")) {
@@ -156,7 +152,7 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
 
         } else if (!strcmp(argv[i], "-tag")) {
             if (i + 1 == argc) {
-                throw std::runtime_error("[!] Expected a tag");
+                throw error("Expected a tag");
             }
             cfg.tag = argv[++i];
         }
@@ -174,8 +170,7 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
             cfg.ignorePRE = true;
 
         } else if (argv[i][0] == '-') {
-            throw std::runtime_error(
-                    "[!] Unknown option: " + std::string(argv[i]));
+            throw error("Unknown option: " + std::string(argv[i]));
 
         } else if (cfg.toTest.empty()) {
             parsePath(i - 1, cfg.toTest.file);
@@ -184,39 +179,32 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
             parsePath(i - 1, cfg.prime.file);
 
         } else {
-            throw std::runtime_error(
-                    "[!] Unexpected token: " + std::string(argv[i]));
+            throw error("Unexpected token: " + std::string(argv[i]));
         }
     }
 
     // checks
     if (cfg.generator.empty()) {
-        throw std::runtime_error(
-                "[!] Source of tests was not set");
+        throw error("Source of tests was not set");
 
     } else if (cfg.toTest.empty()) {
-        throw std::runtime_error(
-                "[!] Solution to test was not set");
+        throw error("Solution to test was not set");
 
     } else if (!cfg.prime.empty() && !cfg.verifier.empty()) {
-        throw std::runtime_error(
-                "[!] Prime solution and verifier can only be set separately");
+        throw error("Prime solution and verifier can only be set separately");
     } else if ((cfg.pausing || cfg.collapseVerdicts) && terminal::isStdoutRedirected()) {
-        throw std::runtime_error(
-                "[!] Flags -p and -cv cannot be set if stdout redirected");
+        throw error("Flags -p and -cv cannot be set if stdout redirected");
     }
 
     // constraints check
     if ((cfg.timeLimit > 0 && cfg.timeLimit < constraints::MIN_TIME_LIMIT_MS)
     || (cfg.primeTimeLimit > 0 && cfg.primeTimeLimit < constraints::MIN_TIME_LIMIT_MS)) {
-        throw std::runtime_error(
-                "[!] Minimum time limit is " +
+        throw error("Minimum time limit is " +
                 std::to_string(constraints::MIN_TIME_LIMIT_MS) + " ms");
     }
     else if (cfg.memoryLimit > constraints::MAX_MEM_LIMIT_MB
     || cfg.primeMemoryLimit > constraints::MAX_MEM_LIMIT_MB) {
-        throw std::runtime_error(
-                "[!] Maximum memory limit is " +
+        throw error("Maximum memory limit is " +
                 std::to_string(constraints::MAX_MEM_LIMIT_MB) + " MB");
     }
 

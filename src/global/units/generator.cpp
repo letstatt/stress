@@ -1,5 +1,6 @@
 #include "units/generator.h"
 #include "core/run.h"
+#include "core/error.h"
 #include "invoker.h"
 
 namespace units {
@@ -8,7 +9,7 @@ namespace units {
 
     generator::generator(tests_source testsSource, const struct proto_unit &u) : unit(u) {
         if ((cat = testsSource) == tests_source::UNSPECIFIED) {
-            throw std::runtime_error("[!] Source of tests is unspecified");
+            throw error("Source of tests is unspecified");
         }
     }
 
@@ -99,7 +100,7 @@ namespace units {
 
         } else if (cat == tests_source::DIR) {
             if (!std::filesystem::is_directory(file)) {
-                throw std::runtime_error("[!] " + toString() + " is not a directory");
+                throw error(toString() + " is not a directory");
             }
             iter = std::filesystem::directory_iterator(file);
         }
