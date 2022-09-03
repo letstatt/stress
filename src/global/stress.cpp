@@ -60,6 +60,7 @@ void stress::usage() {
 
     const static std::pair<std::string, std::string> OPTIONS[] = {
             {"General:",   ""},
+            {"-b",         "Break if one test fails"},
             {"-p",         "Pause each time test fails"},
             {"-c [gvtp]",  "Do not recompile files if compiled ones cached"},
             {"-n n",       "Run n tests (default: 10)\n"},
@@ -87,7 +88,8 @@ void stress::usage() {
             {"-v file",    "Path to custom verifier"},
             {"-vstrict",   "Use strict comparison of outputs\n"},
             {"Misc:",      ""},
-            {"-cv",        "Collapse identical verdicts\n"}
+            {"-cv",        "Collapse identical verdicts"},
+            {"-cfg file",  "Set configuration file\n"}
     };
 
     std::cout << std::endl;

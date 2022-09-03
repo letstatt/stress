@@ -49,6 +49,7 @@ struct runtime_config : limits, tests_config, invoker_config, terminal_config, l
     using path = std::filesystem::path;
 
     bool ignorePRE = false;
+    bool breaking = false;
 
     units::proto_unit testsSource;
     units::proto_unit toTest;

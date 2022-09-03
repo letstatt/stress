@@ -69,6 +69,9 @@ void session::processedTest(test_result &result) {
         if (cfg.pausing && !cancelled) {
             terminal::pause();
         }
+        if (cfg.breaking) {
+            cancel();
+        }
     }
 }
 
