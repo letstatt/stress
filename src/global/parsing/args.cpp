@@ -2,29 +2,37 @@
 #include "terminal.h"
 #include "core/error.h"
 #include <cstring>
+#include <fstream>
+#include <set>
+#include <functional>
 
-runtime_config args::parseArgs(int argc, char *argv[]) {
-    namespace fs = std::filesystem;
+namespace {
+    std::unordered_map<std::string, std::function<void(int&, std::vector<std::string>&, runtime_config&)>> arg_map;
     using cat = units::unit_category;
-    runtime_config cfg;
 
-    auto parseUnsigned = [&](int i, auto &result) {
-        if (i == argc - 1) {
+    auto parseUnsigned = [](int i, std::vector<std::string>& args, auto &result) {
+        if (i >= args.size()) {
             throw error("Expected an unsigned integer");
         }
         try {
-            result = std::stoi(argv[i + 1]);
+            std::string n{args[i]};
+            for (auto &i: n) {
+                if (!('0' <= i && i <= '9')) {
+                    throw 0; // just go to catch(...)
+                }
+            }
+            result = std::stoi(n);
         } catch (...) {
             throw error("Expected an unsigned integer");
         }
     };
 
-    auto parsePath = [&](int i, fs::path &result) {
-        if (i == argc - 1) {
+    auto parsePath = [](int i, std::vector<std::string>& args, auto &result) {
+        if (i >= args.size()) {
             throw error("Expected a path");
         }
         try {
-            result = argv[i + 1];
+            result = args[i];
         } catch (...) {
             throw error("Expected a path");
         }
@@ -33,11 +41,11 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
         }
     };
 
-    auto parseUnitCategory = [&](int i, std::unordered_set<cat> &s) {
-        if (i == argc - 1) {
+    auto parseUnitCategory = [](int i, std::vector<std::string>& args, std::unordered_set<cat> &s) {
+        if (i >= args.size()) {
             throw error("Expected a unit categories string");
         }
-        const std::string tokens = argv[i + 1];
+        const std::string tokens = args[i];
         const static std::unordered_map<char, cat> m = {
                 {'g', cat::TESTS_SOURCE},
                 {'v', cat::VERIFIER},
@@ -58,140 +66,93 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
         }
     };
 
-    // parse arguments
-    for (int i = 1; i < argc; ++i) {
-        // limits
-        if (!strcmp(argv[i], "-tl")) {
-            parseUnsigned(i++, cfg.timeLimit);
-
-        } else if (!strcmp(argv[i], "-ml")) {
-            parseUnsigned(i++, cfg.memoryLimit);
-
-        } else if (!strcmp(argv[i], "-ptl")) {
-            parseUnsigned(i++, cfg.primeTimeLimit);
-
-        } else if (!strcmp(argv[i], "-pml")) {
-            parseUnsigned(i++, cfg.primeMemoryLimit);
+    auto parseTestsSource = [](int i, std::vector<std::string>& args, runtime_config& cfg, tests_source_type type) {
+        if (cfg.testsSourceType != tests_source_type::UNSPECIFIED) {
+            throw error("Only one tests source allowed");
         }
+        parsePath(i, args, cfg.testsSource.file);
+        cfg.testsSourceType = type;
+    };
+}
 
-        // tests_config
-        else if (!strcmp(argv[i], "-g")) {
-            switch (cfg.testsSourceType) {
-                case tests_source_type::EXECUTABLE:
-                    [[fallthrough]];
-                case tests_source_type::UNSPECIFIED:
-                    break;
-                default:
-                    throw error("Use only one source of tests");
-            }
-            parsePath(i++, cfg.testsSource.file);
-            cfg.testsSourceType = tests_source_type::EXECUTABLE;
+void args::init() {
+    #define ARGHANDLER [](int& i, std::vector<std::string>& args, runtime_config& cfg) -> void
+    #define ARG(name, func_body) arg_map.emplace(name, ARGHANDLER func_body);
+    #define ARG_U(name, property) ARG(name, {parseUnsigned(++i, args, cfg.property);})
+    #define ARG_TSRC(name, type) ARG(name, {parseTestsSource(++i, args, cfg, tests_source_type::type);});
+    #define ARG_BOOL(name, property) ARG(name, {cfg.property = true;})
 
-        } else if (!strcmp(argv[i], "-f")) {
-            switch (cfg.testsSourceType) {
-                case tests_source_type::FILE:
-                    [[fallthrough]];
-                case tests_source_type::UNSPECIFIED:
-                    break;
-                default:
-                    throw error("Use only one source of tests");
-            }
-            parsePath(i++, cfg.testsSource.file);
-            cfg.testsSourceType = tests_source_type::FILE;
+    // limits
+    ARG_U("tl", timeLimit);
+    ARG_U("ml", memoryLimit);
+    ARG_U("ptl", primeTimeLimit);
+    ARG_U("pml", primeMemoryLimit);
 
-        } else if (!strcmp(argv[i], "-d")) {
-            switch (cfg.testsSourceType) {
-                case tests_source_type::DIR:
-                    [[fallthrough]];
-                case tests_source_type::UNSPECIFIED:
-                    break;
-                default:
-                    throw error("Use only one source of tests");
-            }
-            parsePath(i++, cfg.testsSource.file);
-            cfg.testsSourceType = tests_source_type::DIR;
+    // tests_config
+    ARG_TSRC("g", EXECUTABLE);
+    ARG_TSRC("f", FILE);
+    ARG_TSRC("d", DIR);
+    ARG_U("n", testsCount);
+    ARG_U("s", initialSeed);
 
-        } else if (!strcmp(argv[i], "-s")) {
-            parseUnsigned(i++, cfg.initialSeed);
-        }
+    // invoker_config
+    ARG("w", { \
+        parseUnsigned(++i, args, cfg.workersCount); \
+        if (cfg.workersCount < 1) { \
+            throw error("Count of workers must be positive"); \
+        } \
+    });
+    ARG("c", {parseUnitCategory(++i, args, cfg.useCached);});
+    ARG_BOOL("mt", multithreading);
 
-        // invoker_config
-        else if (!strcmp(argv[i], "-n")) {
-            parseUnsigned(i++, cfg.testsCount);
+    // terminal_config
+    ARG_BOOL("cv", collapseVerdicts);
+    ARG_BOOL("p", pausing);
+    ARG_BOOL("st", displayStats);
+    ARG_BOOL("dnl", doNotLog);
+    
+    // logger_config
+    ARG_BOOL("stderr", logStderrOnRE);
+    ARG("tag", { \
+        if (++i >= args.size()) { \
+            throw error("Expected a tag"); \
+        } \
+        cfg.tag = args[i]; \
+    });
 
-        } else if (!strcmp(argv[i], "-w")) {
-            parseUnsigned(i++, cfg.workersCount);
-            if (cfg.workersCount < 1) {
-                throw error("Count of workers must be a positive number");
-            }
+    // load config
+    // ?
 
-        } else if (!strcmp(argv[i], "-c")) {
-            parseUnitCategory(i++, cfg.useCached);
+    // runtime_config
+    ARG_BOOL("pre", ignorePRE);
+    ARG_BOOL("b", breaking);
+}
 
-        } else if (!strcmp(argv[i], "-mt")) {
-            cfg.multithreading = true;
-        }
+runtime_config args::parseArgs(int argc, char* argv[]) {
+    runtime_config cfg;
 
-        // terminal_config
-        else if (!strcmp(argv[i], "-cv")) {
-            cfg.collapseVerdicts = true;
-
-        } else if (!strcmp(argv[i], "-p")) {
-            cfg.pausing = true;
-
-        } else if (!strcmp(argv[i], "-st")) {
-            cfg.displayStats = true;
-
-        } else if (!strcmp(argv[i], "-dnl")) {
-            cfg.doNotLog = true;
-        }
-
-        // logger_config
-        else if (!strcmp(argv[i], "-stderr")) {
-            cfg.logStderrOnRE = true;
-
-        } else if (!strcmp(argv[i], "-tag")) {
-            if (i + 1 == argc) {
-                throw error("Expected a tag");
-            }
-            cfg.tag = argv[++i];
-        }
-
-        // verifier_config
-        else if (!strcmp(argv[i], "-vstrict")) {
-            cfg.strictVerifier = true;
-
-        } else if (!strcmp(argv[i], "-v")) {
-            parsePath(i++, cfg.verifier.file);
-        }
-
-        // runtime_config
-        else if (!strcmp(argv[i], "-pre")) {
-            cfg.ignorePRE = true;
-
-        } else if (argv[i][0] == '-') {
-            throw error("Unknown option: " + std::string(argv[i]));
-
-        } else if (cfg.toTest.empty()) {
-            parsePath(i - 1, cfg.toTest.file);
-
-        } else if (cfg.prime.empty()) {
-            parsePath(i - 1, cfg.prime.file);
-
-        } else {
-            throw error("Unexpected token: " + std::string(argv[i]));
-        }
+    std::vector<std::string> args(argc - 1);
+    for (int i = 0; i < argc - 1; ++i) {
+        *(args.begin() + i) =
+            std::move(std::string(argv[i + 1]));
     }
+
+    init();
+    parseArgs(cfg, args, false);
 
     // checks
     if (cfg.testsSource.empty()) {
-        throw error("Source of tests was not set");
+        throw error("Tests source was not set");
 
     } else if (cfg.toTest.empty()) {
         throw error("Solution to test was not set");
 
     } else if (!cfg.prime.empty() && !cfg.verifier.empty()) {
         throw error("Prime solution and verifier can only be set separately");
+
+    } else if (cfg.pausing && cfg.breaking) {
+        throw error("Pause and break flags can only be set separately");
+
     } else if ((cfg.pausing || cfg.collapseVerdicts) && terminal::isStdoutRedirected()) {
         throw error("Flags -p and -cv cannot be set if stdout redirected");
     }
@@ -230,4 +191,91 @@ runtime_config args::parseArgs(int argc, char *argv[]) {
     }
 
     return cfg;
+}
+
+void args::parseArgs(runtime_config& cfg, std::vector<std::string>& args, bool nested) {
+    namespace fs = std::filesystem;
+
+    std::set<std::string> repeating_arguments_checker;
+    const static std::string cfg_flag = "-cfg";
+
+    // check for duplicates and config loading
+    for (int i = 0; i < args.size(); ++i) {
+        if (args[i][0] == '-' && arg_map.count(args[i].substr(1))) {
+            if (!repeating_arguments_checker.insert(args[i]).second) {
+                throw error("Check for repeating options");
+            }
+        }
+
+        if (args[i] == cfg_flag) {
+            if (nested) {
+                throw error("Recursive configs aren't supported");
+            } else {
+                fs::path p;
+                try {
+                    if (i == args.size()) {
+                        throw 0; // jump to catch(...)
+                    }
+                    p = args[i + 1];
+                } catch (...) {
+                    throw error("Expected a path");
+                }
+                args::parseConfig(cfg, p);
+            }
+        }
+    }
+
+    // parse arguments
+    for (int i = 0; i < args.size(); ++i) {
+        if (args[i][0] == '-') {
+            auto func = arg_map[args[i].substr(1)];
+
+            if (func) {
+                func(i, args, cfg);
+            } else if (args[i] == cfg_flag) {
+                ++i;
+                continue;
+            } else {
+                throw error("Unknown option: " + args[i]);
+            }
+
+        } else if (cfg.toTest.empty()) {
+            parsePath(i, args, cfg.toTest.file);
+
+        } else if (cfg.prime.empty()) {
+            parsePath(i, args, cfg.prime.file);
+
+        } else {
+            throw error("Unexpected token: " + args[i]);
+        }
+    }
+    
+}
+
+void args::parseConfig(runtime_config& cfg, std::filesystem::path const& path) {
+    if (!is_regular_file(path)) {
+        throw error("Expected a file on config load: " + path.string());
+    }
+
+    std::ifstream reader(path);
+
+    std::vector<std::string> args;
+    std::string tmp;
+
+    /* read config */
+    while (reader >> tmp) {
+        args.push_back(tmp);
+    }
+    reader.close();
+
+    try {
+        parseArgs(cfg, args, true);
+
+    } catch (error const& e) {
+        std::stringstream str;
+        str << "Config loading failed: ";
+        str << path.string() << ", reason:" << std::endl;
+        str << "    " << e.unformatted();
+        throw error(str.str());
+    }
 }
