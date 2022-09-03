@@ -254,17 +254,19 @@ void args::parseArgs(runtime_config& cfg, std::vector<std::string>& args, bool n
 
 void args::parseConfig(runtime_config& cfg, std::filesystem::path const& path) {
     if (!is_regular_file(path)) {
-        throw error("Expected a file on config load: " + path.string());
+        throw error("Expected a file: " + path.string());
     }
-
-    std::ifstream reader(path);
 
     std::vector<std::string> args;
     std::string tmp;
 
     /* read config */
+    std::ifstream reader(path);
     while (reader >> tmp) {
         args.push_back(tmp);
+    }
+    if (reader.bad()) {
+        throw error("Unable to load config: " + path.string());
     }
     reader.close();
 

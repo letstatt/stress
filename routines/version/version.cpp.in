@@ -1,6 +1,6 @@
 #include <cstdlib>
 
 namespace build_info {
-	extern const char * const version = "1.0";
+	extern const char * const version = "1.1";
 	extern const char * const build_number = "${build_number}";
 }
