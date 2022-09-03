@@ -120,6 +120,10 @@ void args::init() {
         cfg.tag = args[i]; \
     });
 
+    // verifier_config
+    ARG_BOOL("vstrict", strictVerifier);
+    ARG("v", {parsePath(++i, args, cfg.verifier.file);});
+
     // load config
     // ?
 
